@@ -1,0 +1,28 @@
+# ReDo — datos locales
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Ruff
+.ruff_cache/
