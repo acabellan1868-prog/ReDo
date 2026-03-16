@@ -75,6 +75,9 @@
         .btn-accion--desconocido { border-color: #E53935; color: #C62828; }
         .btn-accion--desconocido:hover { background: #FFEBEE; }
 
+        .btn-accion--nombre { border-color: #6C63A8; color: #6C63A8; }
+        .btn-accion--nombre:hover { background: #EDE8F8; }
+        .nombre-disp { color: #1E1B2E; font-size: 0.88rem; }
         .sin-datos { text-align: center; padding: 2rem; color: rgba(30,27,46,0.4); font-style: italic; }
         .hostname { color: rgba(30,27,46,0.5); font-size: 0.78rem; }
         .fecha-col { font-size: 0.78rem; color: rgba(30,27,46,0.5); white-space: nowrap; }
@@ -181,9 +184,12 @@
 
                     tbody.innerHTML = lista.map(function(d) {
                         var esConfiable = d.confiable === 1;
-                        var info = d.mac;
+                        var nombre = d.notas || '';
+                        var info = '';
+                        if (nombre) info += '<strong class="nombre-disp">' + nombre + '</strong><br>';
+                        info += '<span class="hostname">' + d.mac + '</span>';
                         if (d.fabricante) info += '<br><span class="hostname">' + d.fabricante + '</span>';
-                        if (d.hostname) info += '<br><span class="hostname">' + d.hostname + '</span>';
+                        if (d.hostname) info += ' · <span class="hostname">' + d.hostname + '</span>';
 
                         return '<tr>' +
                             '<td><strong>' + (d.ip || '?') + '</strong></td>' +
@@ -193,6 +199,7 @@
                                 (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
                             '<td class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
                             '<td>' +
+                                '<button class="btn-accion btn-accion--nombre" onclick="editarNombre(' + d.id + ')" title="Renombrar">&#9998;</button> ' +
                                 (esConfiable
                                     ? '<button class="btn-accion btn-accion--desconocido" onclick="cambiarEstado(' + d.id + ', 0)">Desconocido</button>'
                                     : '<button class="btn-accion btn-accion--confiable" onclick="cambiarEstado(' + d.id + ', 1)">Confiable</button>'
@@ -201,6 +208,17 @@
                         '</tr>';
                     }).join('');
                 });
+        }
+
+        function editarNombre(id) {
+            var nombre = prompt('Nombre para este dispositivo (ej: Movil Xiaomi, Impresora laser...):');
+            if (nombre === null) return;
+            fetch(BASE + '/api/dispositivos/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notas: nombre })
+            })
+            .then(function() { cargarDispositivos(); });
         }
 
         function cambiarEstado(id, confiable) {
