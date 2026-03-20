@@ -4,130 +4,216 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ReDo — Red Domestica</title>
+    <link rel="stylesheet" href="/static/hogar.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #F5F0E8;
-            color: #1E1B2E;
-            min-height: 100vh;
+        /* Estilos específicos de ReDo (no del design system) */
+
+        /* Resumen — grid de mini-tarjetas */
+        .redo-resumen {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: var(--gap-md);
+            margin-bottom: var(--gap-xl);
         }
 
-        /* Header */
-        .header {
-            background: #1E1B2E; color: #fff;
-            padding: 0.5rem 1.5rem;
-            display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 100;
+        .redo-resumen-tarjeta {
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-xl);
+            padding: var(--gap-lg);
+            text-align: center;
+            box-shadow: var(--sombra-sm);
+            transition: box-shadow var(--transicion);
         }
-        .header__logo { font-size: 1.1rem; font-weight: 700; color: #fff; text-decoration: none; }
 
-        /* Contenedor */
-        .contenedor { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
-
-        /* Resumen */
-        .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .resumen-tarjeta {
-            background: #FDF9F3; border: 1px solid rgba(30,27,46,0.1);
-            border-radius: 4px; padding: 1rem; text-align: center;
+        .redo-resumen-tarjeta:hover {
+            box-shadow: var(--sombra-md);
         }
-        .resumen-tarjeta__label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(30,27,46,0.5); }
-        .resumen-tarjeta__valor { font-size: 1.8rem; font-weight: 700; color: #6C63A8; }
-        .resumen-tarjeta--ok .resumen-tarjeta__valor { color: #4CAF50; }
-        .resumen-tarjeta--alerta .resumen-tarjeta__valor { color: #E53935; }
+
+        .redo-resumen-tarjeta__label {
+            font-family: var(--fuente-titular);
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--on-surface-variant);
+            font-weight: 700;
+        }
+
+        .redo-resumen-tarjeta__valor {
+            font-family: var(--fuente-titular);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .redo-resumen-tarjeta--ok .redo-resumen-tarjeta__valor { color: var(--exito); }
+        .redo-resumen-tarjeta--alerta .redo-resumen-tarjeta__valor { color: var(--peligro); }
+        .redo-resumen-tarjeta--fecha .redo-resumen-tarjeta__valor {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--on-surface-variant);
+        }
 
         /* Filtros */
-        .filtros { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .filtro-btn {
-            padding: 0.4rem 0.8rem; border: 1px solid rgba(30,27,46,0.15); border-radius: 4px;
-            background: #FDF9F3; font-size: 0.82rem; cursor: pointer; font-family: inherit;
+        .redo-filtros {
+            display: flex;
+            gap: var(--gap-sm);
+            margin-bottom: var(--gap-md);
+            flex-wrap: wrap;
+            align-items: center;
         }
-        .filtro-btn--activo { background: #6C63A8; color: #fff; border-color: #6C63A8; }
-        .btn-escanear {
-            padding: 0.4rem 0.8rem; border: none; border-radius: 4px;
-            background: #6C63A8; color: #fff; font-size: 0.82rem; cursor: pointer;
-            font-family: inherit; font-weight: 600; margin-left: auto;
+
+        .redo-filtro-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--radio-full);
+            background: var(--surface-container);
+            font-family: var(--fuente-titular);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            color: var(--on-surface-variant);
+            transition: background var(--transicion), color var(--transicion);
         }
-        .btn-escanear:hover { background: #5A5296; }
-        .btn-escanear:disabled { opacity: 0.5; cursor: wait; }
+
+        .redo-filtro-btn:hover {
+            background: var(--surface-container-high);
+        }
+
+        .redo-filtro-btn--activo {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dim));
+            color: var(--on-primary);
+        }
+
+        .redo-btn-escanear {
+            margin-left: auto;
+        }
 
         /* Tabla */
-        .tabla-wrap { background: #FDF9F3; border-radius: 4px; border: 1px solid rgba(30,27,46,0.1); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { background: #EDE8F8; text-align: left; padding: 0.6rem 0.8rem; font-size: 0.75rem;
-             text-transform: uppercase; letter-spacing: 0.04em; color: rgba(30,27,46,0.6); }
-        td { padding: 0.5rem 0.8rem; border-top: 1px solid rgba(30,27,46,0.06); }
-        tr:hover { background: rgba(108,99,168,0.04); }
-
-        .estado-badge {
-            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
-            font-size: 0.72rem; font-weight: 600;
+        .nombre-disp {
+            color: var(--on-surface);
+            font-size: 0.88rem;
+            font-weight: 600;
         }
-        .estado-badge--confiable { background: #E8F5E9; color: #2E7D32; }
-        .estado-badge--desconocido { background: #FFEBEE; color: #C62828; }
 
+        .hostname {
+            color: var(--on-surface-variant);
+            font-size: 0.78rem;
+        }
+
+        .fecha-col {
+            font-size: 0.78rem;
+            color: var(--on-surface-variant);
+            white-space: nowrap;
+        }
+
+        .sin-datos {
+            text-align: center;
+            padding: 2rem;
+            color: var(--on-surface-variant);
+            font-style: italic;
+        }
+
+        /* Botones de acción en tabla */
         .btn-accion {
-            padding: 0.25rem 0.5rem; border: 1px solid rgba(30,27,46,0.15); border-radius: 4px;
-            background: #FDF9F3; font-size: 0.75rem; cursor: pointer; font-family: inherit;
+            padding: 0.3rem 0.6rem;
+            border: none;
+            border-radius: var(--radio-full);
+            font-family: var(--fuente-titular);
+            font-size: 0.68rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            transition: opacity var(--transicion);
         }
-        .btn-accion--confiable { border-color: #4CAF50; color: #2E7D32; }
-        .btn-accion--confiable:hover { background: #E8F5E9; }
-        .btn-accion--desconocido { border-color: #E53935; color: #C62828; }
-        .btn-accion--desconocido:hover { background: #FFEBEE; }
 
-        .btn-accion--nombre { border-color: #6C63A8; color: #6C63A8; }
-        .btn-accion--nombre:hover { background: #EDE8F8; }
-        .nombre-disp { color: #1E1B2E; font-size: 0.88rem; }
-        .sin-datos { text-align: center; padding: 2rem; color: rgba(30,27,46,0.4); font-style: italic; }
-        .hostname { color: rgba(30,27,46,0.5); font-size: 0.78rem; }
-        .fecha-col { font-size: 0.78rem; color: rgba(30,27,46,0.5); white-space: nowrap; }
+        .btn-accion:hover { opacity: 0.8; }
+
+        .btn-accion--confiable {
+            background: var(--exito-fondo);
+            color: var(--exito);
+        }
+
+        .btn-accion--desconocido {
+            background: var(--peligro-fondo);
+            color: var(--peligro);
+        }
+
+        .btn-accion--nombre {
+            background: rgba(164, 238, 224, 0.2);
+            color: var(--primary);
+        }
 
         @media (max-width: 600px) {
-            .contenedor { padding: 1rem; }
-            .resumen { grid-template-columns: repeat(2, 1fr); }
-            th, td { padding: 0.4rem 0.5rem; }
+            .redo-resumen {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <a href="/" class="header__logo">ReDo</a>
+    <!-- ======== EFECTO LUMINA ======== -->
+    <div class="hogar-lumina"></div>
+
+    <!-- ======== HEADER FLOTANTE ======== -->
+    <header class="hogar-header">
+        <div class="hogar-header__barra">
+            <a href="/" class="hogar-header__marca">
+                <span class="material-symbols-outlined filled hogar-header__icono-marca">bubble_chart</span>
+                <div>
+                    <div class="hogar-header__titulo">ReDo</div>
+                    <div class="hogar-header__subtitulo">Red Domestica</div>
+                </div>
+            </a>
+            <nav class="hogar-header__nav">
+                <a href="/" class="hogar-header__enlace">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem">roofing</span>
+                    <span>Inicio</span>
+                </a>
+            </nav>
+        </div>
     </header>
 
-    <main class="contenedor">
+    <main class="hogar-contenedor">
 
         <!-- Resumen -->
-        <div class="resumen">
-            <div class="resumen-tarjeta">
-                <div class="resumen-tarjeta__label">Activos</div>
-                <div class="resumen-tarjeta__valor" id="numActivos">-</div>
+        <div class="redo-resumen">
+            <div class="redo-resumen-tarjeta">
+                <div class="redo-resumen-tarjeta__label">Activos</div>
+                <div class="redo-resumen-tarjeta__valor" id="numActivos">-</div>
             </div>
-            <div class="resumen-tarjeta resumen-tarjeta--ok">
-                <div class="resumen-tarjeta__label">Confiables</div>
-                <div class="resumen-tarjeta__valor" id="numConfiables">-</div>
+            <div class="redo-resumen-tarjeta redo-resumen-tarjeta--ok">
+                <div class="redo-resumen-tarjeta__label">Confiables</div>
+                <div class="redo-resumen-tarjeta__valor" id="numConfiables">-</div>
             </div>
-            <div class="resumen-tarjeta resumen-tarjeta--alerta">
-                <div class="resumen-tarjeta__label">Desconocidos</div>
-                <div class="resumen-tarjeta__valor" id="numDesconocidos">-</div>
+            <div class="redo-resumen-tarjeta redo-resumen-tarjeta--alerta">
+                <div class="redo-resumen-tarjeta__label">Desconocidos</div>
+                <div class="redo-resumen-tarjeta__valor" id="numDesconocidos">-</div>
             </div>
-            <div class="resumen-tarjeta">
-                <div class="resumen-tarjeta__label">Ultimo escaneo</div>
-                <div class="resumen-tarjeta__valor" id="ultimoEscaneo" style="font-size:0.9rem;">-</div>
+            <div class="redo-resumen-tarjeta redo-resumen-tarjeta--fecha">
+                <div class="redo-resumen-tarjeta__label">Ultimo escaneo</div>
+                <div class="redo-resumen-tarjeta__valor" id="ultimoEscaneo">-</div>
             </div>
         </div>
 
         <!-- Filtros -->
-        <div class="filtros">
-            <button class="filtro-btn filtro-btn--activo" data-filtro="todos">Todos</button>
-            <button class="filtro-btn" data-filtro="confiable">Confiables</button>
-            <button class="filtro-btn" data-filtro="desconocido">Desconocidos</button>
-            <button class="btn-escanear" id="btnEscanear">Escanear ahora</button>
+        <div class="redo-filtros">
+            <button class="redo-filtro-btn redo-filtro-btn--activo" data-filtro="todos">Todos</button>
+            <button class="redo-filtro-btn" data-filtro="confiable">Confiables</button>
+            <button class="redo-filtro-btn" data-filtro="desconocido">Desconocidos</button>
+            <button class="hogar-boton hogar-boton--primario redo-btn-escanear" id="btnEscanear">
+                <span class="material-symbols-outlined" style="font-size:1rem">radar</span>
+                Escanear ahora
+            </button>
         </div>
 
         <!-- Tabla -->
-        <div class="tabla-wrap">
-            <table>
+        <div class="hogar-tabla-wrap">
+            <table class="hogar-tabla">
                 <thead>
                     <tr>
                         <th>IP</th>
@@ -194,12 +280,14 @@
                         return '<tr>' +
                             '<td><strong>' + (d.ip || '?') + '</strong></td>' +
                             '<td>' + info + '</td>' +
-                            '<td><span class="estado-badge ' +
-                                (esConfiable ? 'estado-badge--confiable' : 'estado-badge--desconocido') + '">' +
+                            '<td><span class="hogar-badge ' +
+                                (esConfiable ? 'hogar-badge--exito' : 'hogar-badge--peligro') + '">' +
                                 (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
                             '<td class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
                             '<td>' +
-                                '<button class="btn-accion btn-accion--nombre" onclick="editarNombre(' + d.id + ')" title="Renombrar">&#9998;</button> ' +
+                                '<button class="btn-accion btn-accion--nombre" onclick="editarNombre(' + d.id + ')" title="Renombrar">' +
+                                    '<span class="material-symbols-outlined" style="font-size:0.9rem">edit</span>' +
+                                '</button> ' +
                                 (esConfiable
                                     ? '<button class="btn-accion btn-accion--desconocido" onclick="cambiarEstado(' + d.id + ', 0)">Desconocido</button>'
                                     : '<button class="btn-accion btn-accion--confiable" onclick="cambiarEstado(' + d.id + ', 1)">Confiable</button>'
@@ -236,30 +324,30 @@
         document.getElementById('btnEscanear').addEventListener('click', function() {
             var btn = this;
             btn.disabled = true;
-            btn.textContent = 'Escaneando...';
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">hourglass_top</span> Escaneando...';
             fetch(BASE + '/api/escanear', { method: 'POST' })
                 .then(function() {
-                    btn.textContent = 'Listo';
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">check_circle</span> Listo';
                     setTimeout(function() {
                         btn.disabled = false;
-                        btn.textContent = 'Escanear ahora';
+                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">radar</span> Escanear ahora';
                         cargarResumen();
                         cargarDispositivos();
                     }, 3000);
                 })
                 .catch(function() {
                     btn.disabled = false;
-                    btn.textContent = 'Escanear ahora';
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">radar</span> Escanear ahora';
                 });
         });
 
-        document.querySelectorAll('.filtro-btn').forEach(function(btn) {
+        document.querySelectorAll('.redo-filtro-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 filtroActual = this.getAttribute('data-filtro');
-                document.querySelectorAll('.filtro-btn').forEach(function(b) {
-                    b.classList.remove('filtro-btn--activo');
+                document.querySelectorAll('.redo-filtro-btn').forEach(function(b) {
+                    b.classList.remove('redo-filtro-btn--activo');
                 });
-                this.classList.add('filtro-btn--activo');
+                this.classList.add('redo-filtro-btn--activo');
                 cargarDispositivos();
             });
         });
