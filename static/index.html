@@ -169,14 +169,38 @@
                     <div class="hogar-header__subtitulo">Red Domestica</div>
                 </div>
             </a>
-            <nav class="hogar-header__nav">
-                <a href="/" class="hogar-header__enlace">
-                    <span class="material-symbols-outlined" style="font-size:1.1rem">roofing</span>
-                    <span>Inicio</span>
-                </a>
-            </nav>
+            <button class="hogar-header__menu-btn" id="btnMenu">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
         </div>
     </header>
+
+    <!-- ======== DRAWER DE NAVEGACIÓN ======== -->
+    <div class="hogar-drawer-overlay oculto" id="drawerOverlay"></div>
+    <nav class="hogar-drawer oculto" id="drawerNav">
+        <button class="hogar-drawer__cerrar" id="btnCerrarDrawer">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <span class="hogar-drawer__titulo">Navegacion</span>
+        <a href="/red/" class="hogar-drawer__enlace hogar-drawer__enlace--activo">
+            <span class="material-symbols-outlined">lan</span>
+            <span>Red</span>
+        </a>
+        <div class="hogar-drawer__separador"></div>
+        <a href="/" class="hogar-drawer__enlace">
+            <span class="material-symbols-outlined">roofing</span>
+            <span>Ir al Portal</span>
+        </a>
+        <a href="/finanzas/" class="hogar-drawer__enlace">
+            <span class="material-symbols-outlined">payments</span>
+            <span>Finanzas</span>
+        </a>
+        <div class="hogar-drawer__separador"></div>
+        <button class="hogar-drawer__enlace" id="btnTema">
+            <span class="material-symbols-outlined" id="iconoTema">dark_mode</span>
+            <span>Cambiar tema</span>
+        </button>
+    </nav>
 
     <main class="hogar-contenedor">
 
@@ -231,6 +255,51 @@
     </main>
 
     <script>
+        /* ============================================================
+           Drawer de navegacion
+           ============================================================ */
+        var drawer = document.getElementById("drawerNav");
+        var overlay = document.getElementById("drawerOverlay");
+
+        function toggleDrawer() {
+            drawer.classList.toggle("oculto");
+            overlay.classList.toggle("oculto");
+        }
+
+        document.getElementById("btnMenu").addEventListener("click", toggleDrawer);
+        document.getElementById("drawerOverlay").addEventListener("click", toggleDrawer);
+        document.getElementById("btnCerrarDrawer").addEventListener("click", toggleDrawer);
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape" && !drawer.classList.contains("oculto")) toggleDrawer();
+        });
+
+        /* ============================================================
+           Toggle tema claro/oscuro
+           ============================================================ */
+        (function initTema() {
+            if (localStorage.getItem("hogar-tema") === "oscuro") {
+                document.documentElement.setAttribute("data-tema", "oscuro");
+            }
+            actualizarIconoTema();
+        })();
+
+        document.getElementById("btnTema").addEventListener("click", function() {
+            var oscuro = document.documentElement.getAttribute("data-tema") === "oscuro";
+            if (oscuro) {
+                document.documentElement.removeAttribute("data-tema");
+                localStorage.setItem("hogar-tema", "claro");
+            } else {
+                document.documentElement.setAttribute("data-tema", "oscuro");
+                localStorage.setItem("hogar-tema", "oscuro");
+            }
+            actualizarIconoTema();
+        });
+
+        function actualizarIconoTema() {
+            var oscuro = document.documentElement.getAttribute("data-tema") === "oscuro";
+            document.getElementById("iconoTema").textContent = oscuro ? "light_mode" : "dark_mode";
+        }
+
         /* Prefijo para funcionar bajo proxy (/red/) o directo */
         var BASE = (function() {
             var ruta = window.location.pathname;
