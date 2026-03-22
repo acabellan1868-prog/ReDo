@@ -152,6 +152,62 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* ── Tabla responsive: tarjetas en móvil ── */
+        @media (max-width: 768px) {
+            .hogar-tabla thead {
+                display: none;
+            }
+
+            .hogar-tabla tbody tr {
+                display: block;
+                background: var(--surface-container-lowest);
+                border-radius: var(--radio-xl);
+                padding: var(--gap-md);
+                margin-bottom: var(--gap-md);
+                box-shadow: var(--sombra-sm);
+            }
+
+            .hogar-tabla tbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.4rem 0;
+                border-bottom: 1px solid var(--surface-container);
+            }
+
+            .hogar-tabla tbody td:last-child {
+                border-bottom: none;
+                padding-top: 0.6rem;
+                justify-content: flex-end;
+                gap: var(--gap-sm);
+            }
+
+            .hogar-tabla tbody td::before {
+                content: attr(data-label);
+                font-family: var(--fuente-titular);
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--on-surface-variant);
+                flex-shrink: 0;
+                margin-right: var(--gap-sm);
+            }
+
+            .hogar-tabla tbody td:last-child::before {
+                content: none;
+            }
+
+            .fecha-col {
+                white-space: normal;
+            }
+
+            .btn-accion {
+                padding: 0.45rem 0.8rem;
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -347,12 +403,12 @@
                         if (d.hostname) info += ' · <span class="hostname">' + d.hostname + '</span>';
 
                         return '<tr>' +
-                            '<td><strong>' + (d.ip || '?') + '</strong></td>' +
-                            '<td>' + info + '</td>' +
-                            '<td><span class="hogar-badge ' +
+                            '<td data-label="IP"><strong>' + (d.ip || '?') + '</strong></td>' +
+                            '<td data-label="Dispositivo">' + info + '</td>' +
+                            '<td data-label="Estado"><span class="hogar-badge ' +
                                 (esConfiable ? 'hogar-badge--exito' : 'hogar-badge--peligro') + '">' +
                                 (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
-                            '<td class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
+                            '<td data-label="Visto" class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
                             '<td>' +
                                 '<button class="btn-accion btn-accion--nombre" onclick="editarNombre(' + d.id + ')" title="Renombrar">' +
                                     '<span class="material-symbols-outlined" style="font-size:0.9rem">edit</span>' +
