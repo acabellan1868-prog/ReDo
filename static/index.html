@@ -155,6 +155,13 @@
 
         /* ── Tabla responsive: tarjetas en móvil ── */
         @media (max-width: 768px) {
+            /* El wrapper deja de recortar; cada tarjeta tiene su propio estilo */
+            .hogar-tabla-wrap {
+                background: none;
+                box-shadow: none;
+                overflow: visible;
+            }
+
             .hogar-tabla thead {
                 display: none;
             }
@@ -171,9 +178,12 @@
             .hogar-tabla tbody td {
                 display: flex;
                 justify-content: space-between;
-                align-items: center;
+                align-items: baseline;
                 padding: 0.4rem 0;
+                border-top: none;
                 border-bottom: 1px solid var(--surface-container);
+                word-break: break-word;
+                min-width: 0;
             }
 
             .hogar-tabla tbody td:last-child {
@@ -181,6 +191,7 @@
                 padding-top: 0.6rem;
                 justify-content: flex-end;
                 gap: var(--gap-sm);
+                flex-wrap: wrap;
             }
 
             .hogar-tabla tbody td::before {
@@ -192,7 +203,8 @@
                 letter-spacing: 0.08em;
                 color: var(--on-surface-variant);
                 flex-shrink: 0;
-                margin-right: var(--gap-sm);
+                margin-right: var(--gap-md);
+                min-width: 5.5rem;
             }
 
             .hogar-tabla tbody td:last-child::before {
@@ -206,6 +218,11 @@
             .btn-accion {
                 padding: 0.45rem 0.8rem;
                 font-size: 0.75rem;
+            }
+
+            /* El contenido de cada celda se alinea a la derecha */
+            .nombre-disp, .hostname {
+                text-align: right;
             }
         }
     </style>
