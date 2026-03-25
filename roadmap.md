@@ -48,8 +48,9 @@ Desplegado en VM 101 y funcionando.
 - [x] Endpoint timeline general por día (2026-03-26)
 - [x] Pestaña "Presencia" con timeline Gantt visual (2026-03-26)
 
-### Fase 5 — Futuro
+### Fase 5 — Configuración y mejoras pendientes
 
+- [ ] Pantalla de configuración en ReDo (red, intervalo, presencia días, NTFY)
 - [ ] Vista agrupada por zona (dispositivos agrupados en vez de lista plana)
 - [ ] Auto-detección de tipo por fabricante (heurística + sugerencia)
 - [ ] Historial de escaneos con gráfico temporal
