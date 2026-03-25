@@ -16,5 +16,8 @@ INTERVALO_ESCANEO = int(os.environ.get("REDO_SCAN_INTERVAL", "300"))  # segundos
 NTFY_URL = os.environ.get("NTFY_URL", "https://ntfy.sh")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "hogaros-3ca6f61b")
 
+# Presencia — dias de detalle antes de agregar a resumen diario
+PRESENCIA_DIAS_DETALLE = int(os.environ.get("REDO_PRESENCIA_DIAS", "180"))
+
 # Zona horaria
 TZ = os.environ.get("TZ", "Europe/Madrid")

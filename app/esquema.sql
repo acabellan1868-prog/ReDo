@@ -1,5 +1,5 @@
 -- ============================================================
--- ReDo — Esquema de base de datos v1
+-- ReDo — Esquema de base de datos v2
 -- ============================================================
 
 PRAGMA journal_mode=WAL;
@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS dispositivos (
     primera_vez TEXT NOT NULL DEFAULT (datetime('now')),
     ultima_vez TEXT NOT NULL DEFAULT (datetime('now')),
     confiable INTEGER NOT NULL DEFAULT 0,
-    notas TEXT
+    notas TEXT,
+    tipo TEXT NOT NULL DEFAULT 'otro',
+    zona TEXT
 );
 
 -- Historial de escaneos
@@ -37,9 +39,36 @@ CREATE TABLE IF NOT EXISTS alertas (
     enviada INTEGER NOT NULL DEFAULT 0
 );
 
+-- Historial de presencia (cada avistamiento individual)
+CREATE TABLE IF NOT EXISTS presencia (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dispositivo_id INTEGER NOT NULL REFERENCES dispositivos(id),
+    escaneo_id INTEGER NOT NULL REFERENCES escaneos(id),
+    ip TEXT,
+    visto_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Resumen diario de presencia (agregacion de datos > 180 dias)
+CREATE TABLE IF NOT EXISTS presencia_diaria (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dispositivo_id INTEGER NOT NULL REFERENCES dispositivos(id),
+    fecha TEXT NOT NULL,
+    primera_vez TEXT,
+    ultima_vez TEXT,
+    minutos_conectado INTEGER,
+    num_avistamientos INTEGER,
+    UNIQUE(dispositivo_id, fecha)
+);
+
 -- Indices para rendimiento
 CREATE INDEX IF NOT EXISTS idx_dispositivos_mac ON dispositivos(mac);
 CREATE INDEX IF NOT EXISTS idx_dispositivos_confiable ON dispositivos(confiable);
+CREATE INDEX IF NOT EXISTS idx_dispositivos_tipo ON dispositivos(tipo);
 CREATE INDEX IF NOT EXISTS idx_escaneos_inicio ON escaneos(inicio);
 CREATE INDEX IF NOT EXISTS idx_alertas_fecha ON alertas(fecha);
 CREATE INDEX IF NOT EXISTS idx_alertas_dispositivo ON alertas(dispositivo_id);
+CREATE INDEX IF NOT EXISTS idx_presencia_dispositivo ON presencia(dispositivo_id);
+CREATE INDEX IF NOT EXISTS idx_presencia_visto ON presencia(visto_en);
+CREATE INDEX IF NOT EXISTS idx_presencia_escaneo ON presencia(escaneo_id);
+CREATE INDEX IF NOT EXISTS idx_presencia_diaria_fecha ON presencia_diaria(fecha);
+CREATE INDEX IF NOT EXISTS idx_presencia_diaria_disp ON presencia_diaria(dispositivo_id);

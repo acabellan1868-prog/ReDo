@@ -4,13 +4,13 @@
 
 **Fecha:** 2026-03-22
 
-El proyecto está funcional y desplegado. En esta sesión se ha corregido la
-visualización responsive de la tabla de dispositivos: en pantallas ≤ 768 px
+Tabla de dispositivos responsive completada y desplegada. En pantallas ≤ 768 px
 las filas se convierten en tarjetas apiladas con etiquetas (`data-label`) y
-botones de acción accesibles. Commit `c9d7ec4` subido a GitHub.
+botones de acción accesibles. Corregido también el desbordamiento lateral
+(overflow del wrapper). Commits `c9d7ec4` y `4a7a3e9` subidos a GitHub.
 
-**Próximo paso:** Desplegar en la VM 101 ejecutando `actualizar.sh` y verificar
-en móvil vertical que las tarjetas se ven correctamente.
+**Próximo paso:** Verificar en móvil que las tarjetas se ven correctamente
+tras desplegar con `actualizar.sh`.
 
 ---
 

@@ -91,6 +91,20 @@
             margin-left: auto;
         }
 
+        /* Selectores de tipo y zona */
+        .redo-filtro-select {
+            padding: 0.4rem 0.7rem;
+            border: 1px solid var(--surface-container-high);
+            border-radius: var(--radio-full);
+            background: var(--surface-container);
+            font-family: var(--fuente-titular);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--on-surface-variant);
+            cursor: pointer;
+            appearance: auto;
+        }
+
         /* Tabla */
         .nombre-disp {
             color: var(--on-surface);
@@ -114,6 +128,22 @@
             padding: 2rem;
             color: var(--on-surface-variant);
             font-style: italic;
+        }
+
+        /* Icono de tipo en la tabla */
+        .icono-tipo {
+            font-size: 1.2rem;
+            color: var(--primary);
+            vertical-align: middle;
+        }
+
+        .zona-badge {
+            font-size: 0.68rem;
+            color: var(--on-surface-variant);
+            background: var(--surface-container);
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radio-full);
+            white-space: nowrap;
         }
 
         /* Botones de acción en tabla */
@@ -147,15 +177,233 @@
             color: var(--primary);
         }
 
+        .btn-accion--presencia {
+            background: rgba(164, 200, 238, 0.2);
+            color: var(--primary);
+        }
+
+        /* ── Pestanas Dispositivos / Presencia ── */
+        .redo-tabs {
+            display: flex;
+            gap: var(--gap-xs);
+            margin-bottom: var(--gap-lg);
+            border-bottom: 2px solid var(--surface-container);
+        }
+
+        .redo-tab {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            background: none;
+            font-family: var(--fuente-titular);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--on-surface-variant);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: color var(--transicion), border-color var(--transicion);
+        }
+
+        .redo-tab:hover { color: var(--on-surface); }
+
+        .redo-tab--activo {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .redo-panel { display: none; }
+        .redo-panel--activo { display: block; }
+
+        /* ── Timeline de presencia ── */
+        .timeline-controles {
+            display: flex;
+            gap: var(--gap-md);
+            align-items: center;
+            margin-bottom: var(--gap-lg);
+            flex-wrap: wrap;
+        }
+
+        .timeline-fecha {
+            padding: 0.4rem 0.7rem;
+            border: 1px solid var(--surface-container-high);
+            border-radius: var(--radio-md);
+            background: var(--surface-container);
+            font-family: var(--fuente-titular);
+            font-size: 0.85rem;
+            color: var(--on-surface);
+        }
+
+        .timeline-container {
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-xl);
+            padding: var(--gap-lg);
+            box-shadow: var(--sombra-sm);
+        }
+
+        .timeline-cabecera {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: var(--gap-sm);
+            padding-bottom: var(--gap-sm);
+            border-bottom: 1px solid var(--surface-container);
+            margin-bottom: var(--gap-sm);
+        }
+
+        .timeline-horas {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--on-surface-variant);
+            font-family: var(--fuente-titular);
+            font-weight: 600;
+        }
+
+        .timeline-fila {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: var(--gap-sm);
+            align-items: center;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid var(--surface-container);
+        }
+
+        .timeline-fila:last-child { border-bottom: none; }
+
+        .timeline-dispositivo {
+            display: flex;
+            align-items: center;
+            gap: var(--gap-sm);
+            overflow: hidden;
+        }
+
+        .timeline-dispositivo__nombre {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--on-surface);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .timeline-barra {
+            position: relative;
+            height: 20px;
+            background: var(--surface-container);
+            border-radius: var(--radio-sm);
+            overflow: hidden;
+        }
+
+        .timeline-franja {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            background: linear-gradient(135deg, var(--primary), var(--exito));
+            border-radius: var(--radio-sm);
+            opacity: 0.85;
+        }
+
+        .timeline-franja:hover {
+            opacity: 1;
+        }
+
+        .timeline-vacio {
+            text-align: center;
+            padding: 2rem;
+            color: var(--on-surface-variant);
+            font-style: italic;
+        }
+
+        /* ── Modal de edicion ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay--visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-xl);
+            padding: var(--gap-xl);
+            width: 90%;
+            max-width: 420px;
+            box-shadow: var(--sombra-lg);
+        }
+
+        .modal__titulo {
+            font-family: var(--fuente-titular);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--on-surface);
+            margin-bottom: var(--gap-lg);
+        }
+
+        .modal__campo {
+            margin-bottom: var(--gap-md);
+        }
+
+        .modal__label {
+            display: block;
+            font-family: var(--fuente-titular);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--on-surface-variant);
+            margin-bottom: 0.3rem;
+        }
+
+        .modal__input, .modal__select {
+            width: 100%;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--surface-container-high);
+            border-radius: var(--radio-md);
+            background: var(--surface-container);
+            font-family: var(--fuente-cuerpo);
+            font-size: 0.9rem;
+            color: var(--on-surface);
+            box-sizing: border-box;
+        }
+
+        .modal__input:focus, .modal__select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal__acciones {
+            display: flex;
+            gap: var(--gap-sm);
+            justify-content: flex-end;
+            margin-top: var(--gap-lg);
+        }
+
         @media (max-width: 600px) {
             .redo-resumen {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .timeline-fila {
+                grid-template-columns: 120px 1fr;
+            }
+            .timeline-cabecera {
+                grid-template-columns: 120px 1fr;
+            }
         }
 
-        /* ── Tabla responsive: tarjetas en móvil ── */
+        /* ── Tabla responsive: tarjetas en movil ── */
         @media (max-width: 768px) {
-            /* El wrapper deja de recortar; cada tarjeta tiene su propio estilo */
             .hogar-tabla-wrap {
                 background: none;
                 box-shadow: none;
@@ -220,7 +468,6 @@
                 font-size: 0.75rem;
             }
 
-            /* El contenido de cada celda se alinea a la derecha */
             .nombre-disp, .hostname {
                 text-align: right;
             }
@@ -248,7 +495,7 @@
         </div>
     </header>
 
-    <!-- ======== DRAWER DE NAVEGACIÓN ======== -->
+    <!-- ======== DRAWER DE NAVEGACION ======== -->
     <div class="hogar-drawer-overlay oculto" id="drawerOverlay"></div>
     <nav class="hogar-drawer oculto" id="drawerNav">
         <button class="hogar-drawer__cerrar" id="btnCerrarDrawer">
@@ -275,6 +522,43 @@
         </button>
     </nav>
 
+    <!-- ======== MODAL DE EDICION ======== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal__titulo" id="modalTitulo">Editar dispositivo</div>
+            <input type="hidden" id="modalId">
+            <div class="modal__campo">
+                <label class="modal__label" for="modalNombre">Nombre</label>
+                <input class="modal__input" id="modalNombre" type="text" placeholder="Ej: Movil Lucia, Impresora HP...">
+            </div>
+            <div class="modal__campo">
+                <label class="modal__label" for="modalTipo">Tipo</label>
+                <select class="modal__select" id="modalTipo">
+                    <option value="otro">Sin clasificar</option>
+                    <option value="telefono">Telefono</option>
+                    <option value="portatil">Portatil</option>
+                    <option value="sobremesa">PC Sobremesa</option>
+                    <option value="tablet">Tablet</option>
+                    <option value="tv">TV / Streaming</option>
+                    <option value="impresora">Impresora</option>
+                    <option value="router">Router / AP / Switch</option>
+                    <option value="iot">IoT (sensor, enchufe, bombilla)</option>
+                    <option value="servidor">Servidor / NAS</option>
+                    <option value="consola">Consola</option>
+                </select>
+            </div>
+            <div class="modal__campo">
+                <label class="modal__label" for="modalZona">Zona</label>
+                <input class="modal__input" id="modalZona" type="text" list="listaZonas" placeholder="Ej: Salon, Despacho, Cocina...">
+                <datalist id="listaZonas"></datalist>
+            </div>
+            <div class="modal__acciones">
+                <button class="hogar-boton" id="modalCancelar">Cancelar</button>
+                <button class="hogar-boton hogar-boton--primario" id="modalGuardar">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <main class="hogar-contenedor">
 
         <!-- Resumen -->
@@ -297,37 +581,102 @@
             </div>
         </div>
 
-        <!-- Filtros -->
-        <div class="redo-filtros">
-            <button class="redo-filtro-btn redo-filtro-btn--activo" data-filtro="todos">Todos</button>
-            <button class="redo-filtro-btn" data-filtro="confiable">Confiables</button>
-            <button class="redo-filtro-btn" data-filtro="desconocido">Desconocidos</button>
-            <button class="hogar-boton hogar-boton--primario redo-btn-escanear" id="btnEscanear">
-                <span class="material-symbols-outlined" style="font-size:1rem">radar</span>
-                Escanear ahora
+        <!-- Pestanas -->
+        <div class="redo-tabs">
+            <button class="redo-tab redo-tab--activo" data-tab="dispositivos">
+                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">devices</span>
+                Dispositivos
+            </button>
+            <button class="redo-tab" data-tab="presencia">
+                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">timeline</span>
+                Presencia
             </button>
         </div>
 
-        <!-- Tabla -->
-        <div class="hogar-tabla-wrap">
-            <table class="hogar-tabla">
-                <thead>
-                    <tr>
-                        <th>IP</th>
-                        <th>MAC / Fabricante</th>
-                        <th>Estado</th>
-                        <th>Visto</th>
-                        <th>Accion</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaDispositivos">
-                    <tr><td colspan="5" class="sin-datos">Cargando...</td></tr>
-                </tbody>
-            </table>
+        <!-- ======== PANEL: DISPOSITIVOS ======== -->
+        <div class="redo-panel redo-panel--activo" id="panelDispositivos">
+
+            <!-- Filtros -->
+            <div class="redo-filtros">
+                <button class="redo-filtro-btn redo-filtro-btn--activo" data-filtro="todos">Todos</button>
+                <button class="redo-filtro-btn" data-filtro="confiable">Confiables</button>
+                <button class="redo-filtro-btn" data-filtro="desconocido">Desconocidos</button>
+                <select class="redo-filtro-select" id="filtroTipo">
+                    <option value="">Tipo: Todos</option>
+                    <option value="telefono">Telefono</option>
+                    <option value="portatil">Portatil</option>
+                    <option value="sobremesa">Sobremesa</option>
+                    <option value="tablet">Tablet</option>
+                    <option value="tv">TV</option>
+                    <option value="impresora">Impresora</option>
+                    <option value="router">Router</option>
+                    <option value="iot">IoT</option>
+                    <option value="servidor">Servidor</option>
+                    <option value="consola">Consola</option>
+                    <option value="otro">Sin clasificar</option>
+                </select>
+                <select class="redo-filtro-select" id="filtroZona">
+                    <option value="">Zona: Todas</option>
+                </select>
+                <button class="hogar-boton hogar-boton--primario redo-btn-escanear" id="btnEscanear">
+                    <span class="material-symbols-outlined" style="font-size:1rem">radar</span>
+                    Escanear ahora
+                </button>
+            </div>
+
+            <!-- Tabla -->
+            <div class="hogar-tabla-wrap">
+                <table class="hogar-tabla">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>IP</th>
+                            <th>Dispositivo</th>
+                            <th>Zona</th>
+                            <th>Estado</th>
+                            <th>Visto</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDispositivos">
+                        <tr><td colspan="7" class="sin-datos">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        <!-- ======== PANEL: PRESENCIA ======== -->
+        <div class="redo-panel" id="panelPresencia">
+            <div class="timeline-controles">
+                <label class="modal__label" style="margin-bottom:0">Fecha:</label>
+                <input type="date" class="timeline-fecha" id="timelineFecha">
+                <button class="hogar-boton" id="timelineHoy">Hoy</button>
+            </div>
+            <div class="timeline-container" id="timelineContainer">
+                <div class="timeline-vacio">Selecciona una fecha para ver la presencia</div>
+            </div>
+        </div>
+
     </main>
 
     <script>
+        /* ============================================================
+           Mapa de tipos → iconos Material Symbols
+           ============================================================ */
+        var TIPOS_ICONO = {
+            telefono: 'smartphone',
+            portatil: 'laptop',
+            sobremesa: 'desktop_windows',
+            tablet: 'tablet',
+            tv: 'tv',
+            impresora: 'print',
+            router: 'router',
+            iot: 'sensors',
+            servidor: 'dns',
+            consola: 'videogame_asset',
+            otro: 'device_unknown'
+        };
+
         /* ============================================================
            Drawer de navegacion
            ============================================================ */
@@ -373,7 +722,9 @@
             document.getElementById("iconoTema").textContent = oscuro ? "light_mode" : "dark_mode";
         }
 
-        /* Prefijo para funcionar bajo proxy (/red/) o directo */
+        /* ============================================================
+           Prefijo y estado
+           ============================================================ */
         var BASE = (function() {
             var ruta = window.location.pathname;
             var partes = ruta.match(/^(\/[^/]+)\//);
@@ -381,8 +732,33 @@
             return '';
         })();
 
-        var filtroActual = 'todos';
+        var filtroConfiable = 'todos';
+        var filtroTipo = '';
+        var filtroZona = '';
 
+        /* ============================================================
+           Pestanas Dispositivos / Presencia
+           ============================================================ */
+        document.querySelectorAll('.redo-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var destino = this.getAttribute('data-tab');
+                document.querySelectorAll('.redo-tab').forEach(function(t) {
+                    t.classList.remove('redo-tab--activo');
+                });
+                this.classList.add('redo-tab--activo');
+                document.querySelectorAll('.redo-panel').forEach(function(p) {
+                    p.classList.remove('redo-panel--activo');
+                });
+                document.getElementById('panel' + destino.charAt(0).toUpperCase() + destino.slice(1))
+                    .classList.add('redo-panel--activo');
+
+                if (destino === 'presencia') cargarTimeline();
+            });
+        });
+
+        /* ============================================================
+           Resumen
+           ============================================================ */
         function cargarResumen() {
             fetch(BASE + '/api/resumen')
                 .then(function(r) { return r.json(); })
@@ -395,10 +771,42 @@
                 });
         }
 
+        /* ============================================================
+           Cargar zonas para filtro y datalist
+           ============================================================ */
+        function cargarZonas() {
+            fetch(BASE + '/api/dispositivos/zonas')
+                .then(function(r) { return r.json(); })
+                .then(function(zonas) {
+                    var selectZona = document.getElementById('filtroZona');
+                    var valorActual = selectZona.value;
+                    selectZona.innerHTML = '<option value="">Zona: Todas</option>';
+                    zonas.forEach(function(z) {
+                        selectZona.innerHTML += '<option value="' + z + '">' + z + '</option>';
+                    });
+                    selectZona.value = valorActual;
+
+                    // Actualizar datalist del modal
+                    var datalist = document.getElementById('listaZonas');
+                    datalist.innerHTML = '';
+                    zonas.forEach(function(z) {
+                        datalist.innerHTML += '<option value="' + z + '">';
+                    });
+                });
+        }
+
+        /* ============================================================
+           Dispositivos
+           ============================================================ */
         function cargarDispositivos() {
+            var params = [];
+            if (filtroConfiable === 'confiable') params.push('confiable=1');
+            else if (filtroConfiable === 'desconocido') params.push('confiable=0');
+            if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
+            if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
+
             var url = BASE + '/api/dispositivos';
-            if (filtroActual === 'confiable') url += '?confiable=1';
-            else if (filtroActual === 'desconocido') url += '?confiable=0';
+            if (params.length) url += '?' + params.join('&');
 
             fetch(url)
                 .then(function(r) { return r.json(); })
@@ -406,29 +814,40 @@
                     var tbody = document.getElementById('tablaDispositivos');
 
                     if (lista.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="sin-datos">No hay dispositivos</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="sin-datos">No hay dispositivos</td></tr>';
                         return;
                     }
 
                     tbody.innerHTML = lista.map(function(d) {
                         var esConfiable = d.confiable === 1;
                         var nombre = d.notas || '';
+                        var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
+
                         var info = '';
                         if (nombre) info += '<strong class="nombre-disp">' + nombre + '</strong><br>';
                         info += '<span class="hostname">' + d.mac + '</span>';
                         if (d.fabricante) info += '<br><span class="hostname">' + d.fabricante + '</span>';
                         if (d.hostname) info += ' · <span class="hostname">' + d.hostname + '</span>';
 
+                        var zonaHtml = d.zona
+                            ? '<span class="zona-badge">' + d.zona + '</span>'
+                            : '<span class="hostname">—</span>';
+
                         return '<tr>' +
+                            '<td data-label="Tipo"><span class="material-symbols-outlined icono-tipo" title="' + d.tipo + '">' + icono + '</span></td>' +
                             '<td data-label="IP"><strong>' + (d.ip || '?') + '</strong></td>' +
                             '<td data-label="Dispositivo">' + info + '</td>' +
+                            '<td data-label="Zona">' + zonaHtml + '</td>' +
                             '<td data-label="Estado"><span class="hogar-badge ' +
                                 (esConfiable ? 'hogar-badge--exito' : 'hogar-badge--peligro') + '">' +
                                 (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
                             '<td data-label="Visto" class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
                             '<td>' +
-                                '<button class="btn-accion btn-accion--nombre" onclick="editarNombre(' + d.id + ')" title="Renombrar">' +
+                                '<button class="btn-accion btn-accion--nombre" onclick="abrirModal(' + d.id + ')" title="Editar">' +
                                     '<span class="material-symbols-outlined" style="font-size:0.9rem">edit</span>' +
+                                '</button> ' +
+                                '<button class="btn-accion btn-accion--presencia" onclick="verPresencia(' + d.id + ')" title="Presencia">' +
+                                    '<span class="material-symbols-outlined" style="font-size:0.9rem">timeline</span>' +
                                 '</button> ' +
                                 (esConfiable
                                     ? '<button class="btn-accion btn-accion--desconocido" onclick="cambiarEstado(' + d.id + ', 0)">Desconocido</button>'
@@ -440,17 +859,59 @@
                 });
         }
 
-        function editarNombre(id) {
-            var nombre = prompt('Nombre para este dispositivo (ej: Movil Xiaomi, Impresora laser...):');
-            if (nombre === null) return;
+        /* ============================================================
+           Modal de edicion
+           ============================================================ */
+        function abrirModal(id) {
+            // Cargar datos del dispositivo
+            fetch(BASE + '/api/dispositivos/' + id)
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    document.getElementById('modalId').value = d.id;
+                    document.getElementById('modalNombre').value = d.notas || '';
+                    document.getElementById('modalTipo').value = d.tipo || 'otro';
+                    document.getElementById('modalZona').value = d.zona || '';
+                    document.getElementById('modalTitulo').textContent =
+                        'Editar: ' + (d.notas || d.mac);
+                    document.getElementById('modalOverlay').classList.add('modal-overlay--visible');
+                });
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalOverlay').classList.remove('modal-overlay--visible');
+        }
+
+        document.getElementById('modalCancelar').addEventListener('click', cerrarModal);
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') cerrarModal();
+        });
+
+        document.getElementById('modalGuardar').addEventListener('click', function() {
+            var id = document.getElementById('modalId').value;
+            var datos = {
+                notas: document.getElementById('modalNombre').value,
+                tipo: document.getElementById('modalTipo').value,
+                zona: document.getElementById('modalZona').value || null
+            };
             fetch(BASE + '/api/dispositivos/' + id, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ notas: nombre })
+                body: JSON.stringify(datos)
             })
-            .then(function() { cargarDispositivos(); });
-        }
+            .then(function() {
+                cerrarModal();
+                cargarDispositivos();
+                cargarResumen();
+                cargarZonas();
+            });
+        });
 
+        /* ============================================================
+           Cambiar estado (confiable/desconocido)
+           ============================================================ */
         function cambiarEstado(id, confiable) {
             fetch(BASE + '/api/dispositivos/' + id, {
                 method: 'PUT',
@@ -463,6 +924,18 @@
             });
         }
 
+        /* ============================================================
+           Ver presencia de un dispositivo (cambia a pestana presencia)
+           ============================================================ */
+        function verPresencia(id) {
+            // TODO: En una futura iteracion, esto podria abrir un detalle
+            // individual. Por ahora, cambia a la pestana de presencia.
+            document.querySelector('[data-tab="presencia"]').click();
+        }
+
+        /* ============================================================
+           Escanear
+           ============================================================ */
         document.getElementById('btnEscanear').addEventListener('click', function() {
             var btn = this;
             btn.disabled = true;
@@ -483,9 +956,12 @@
                 });
         });
 
+        /* ============================================================
+           Filtros de confiabilidad
+           ============================================================ */
         document.querySelectorAll('.redo-filtro-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                filtroActual = this.getAttribute('data-filtro');
+                filtroConfiable = this.getAttribute('data-filtro');
                 document.querySelectorAll('.redo-filtro-btn').forEach(function(b) {
                     b.classList.remove('redo-filtro-btn--activo');
                 });
@@ -494,6 +970,99 @@
             });
         });
 
+        /* Filtros de tipo y zona */
+        document.getElementById('filtroTipo').addEventListener('change', function() {
+            filtroTipo = this.value;
+            cargarDispositivos();
+        });
+
+        document.getElementById('filtroZona').addEventListener('change', function() {
+            filtroZona = this.value;
+            cargarDispositivos();
+        });
+
+        /* ============================================================
+           Timeline de presencia
+           ============================================================ */
+        var inputFecha = document.getElementById('timelineFecha');
+        inputFecha.value = new Date().toISOString().split('T')[0];
+
+        document.getElementById('timelineHoy').addEventListener('click', function() {
+            inputFecha.value = new Date().toISOString().split('T')[0];
+            cargarTimeline();
+        });
+
+        inputFecha.addEventListener('change', cargarTimeline);
+
+        function cargarTimeline() {
+            var fecha = inputFecha.value;
+            if (!fecha) return;
+
+            var container = document.getElementById('timelineContainer');
+            container.innerHTML = '<div class="timeline-vacio">Cargando...</div>';
+
+            fetch(BASE + '/api/presencia/timeline?fecha=' + fecha)
+                .then(function(r) { return r.json(); })
+                .then(function(datos) {
+                    if (!datos.length) {
+                        container.innerHTML = '<div class="timeline-vacio">Sin datos de presencia para este dia</div>';
+                        return;
+                    }
+
+                    // Cabecera con horas
+                    var horas = '';
+                    for (var h = 0; h <= 24; h += 6) {
+                        horas += '<span>' + String(h).padStart(2, '0') + ':00</span>';
+                    }
+
+                    var html = '<div class="timeline-cabecera">' +
+                        '<div></div>' +
+                        '<div class="timeline-horas">' + horas + '</div>' +
+                    '</div>';
+
+                    // Una fila por dispositivo
+                    datos.forEach(function(disp) {
+                        var icono = TIPOS_ICONO[disp.tipo] || 'device_unknown';
+                        var nombre = disp.nombre || disp.mac;
+
+                        var barraHtml = '';
+                        disp.franjas.forEach(function(f) {
+                            var desde = horaAMinutos(f.desde);
+                            var hasta = horaAMinutos(f.hasta);
+                            // Si la franja es de un solo punto (desde == hasta),
+                            // mostrar al menos 1% de ancho
+                            var anchoMin = Math.max((hasta - desde) / 1440 * 100, 0.7);
+                            var izq = desde / 1440 * 100;
+                            barraHtml += '<div class="timeline-franja" ' +
+                                'style="left:' + izq + '%;width:' + anchoMin + '%" ' +
+                                'title="' + f.desde + ' - ' + f.hasta + '">' +
+                            '</div>';
+                        });
+
+                        html += '<div class="timeline-fila">' +
+                            '<div class="timeline-dispositivo">' +
+                                '<span class="material-symbols-outlined icono-tipo" style="font-size:1rem">' + icono + '</span>' +
+                                '<span class="timeline-dispositivo__nombre">' + nombre + '</span>' +
+                            '</div>' +
+                            '<div class="timeline-barra">' + barraHtml + '</div>' +
+                        '</div>';
+                    });
+
+                    container.innerHTML = html;
+                })
+                .catch(function() {
+                    container.innerHTML = '<div class="timeline-vacio">Error al cargar la presencia</div>';
+                });
+        }
+
+        function horaAMinutos(hhmm) {
+            var partes = hhmm.split(':');
+            return parseInt(partes[0]) * 60 + parseInt(partes[1]);
+        }
+
+        /* ============================================================
+           Utilidades
+           ============================================================ */
         function formatearFecha(iso) {
             if (!iso) return '-';
             try {
@@ -504,8 +1073,12 @@
             } catch(e) { return iso; }
         }
 
+        /* ============================================================
+           Inicializacion
+           ============================================================ */
         cargarResumen();
         cargarDispositivos();
+        cargarZonas();
         setInterval(function() { cargarResumen(); cargarDispositivos(); }, 30000);
     </script>
 

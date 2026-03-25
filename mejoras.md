@@ -80,7 +80,7 @@ Es un cambio mínimo en `escanear_red()` — una sola línea INSERT por cada dis
 | Tamaño estimado por fila | ~80 bytes |
 | Tamaño por año | ~120 MB |
 
-**Gestión del volumen:** Política de retención con limpieza automática. Mantener detalle completo 90 días y luego agregar a resumen diario (tabla `presencia_diaria` con minutos conectado por dispositivo/día). Se implementa como tarea programada en APScheduler.
+**Gestión del volumen:** Política de retención con limpieza automática. Mantener detalle completo 180 días y luego agregar a resumen diario (tabla `presencia_diaria` con minutos conectado por dispositivo/día). Se implementa como tarea programada en APScheduler.
 
 #### Tabla de agregación: `presencia_diaria`
 
@@ -101,7 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_presencia_diaria_disp ON presencia_diaria(disposi
 ```
 
 El job nocturno de APScheduler:
-1. Para cada día > 90 días, calcula los agregados y los inserta en `presencia_diaria`
+1. Para cada día > 180 días, calcula los agregados y los inserta en `presencia_diaria`
 2. Borra las filas detalladas de `presencia` de ese día
 3. Resultado: historial ilimitado con granularidad diaria, detalle solo para los últimos 3 meses
 

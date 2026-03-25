@@ -19,10 +19,25 @@ def obtener_conexion() -> sqlite3.Connection:
 
 
 def inicializar_bd():
-    """Crea las tablas si no existen ejecutando esquema.sql."""
+    """Crea las tablas si no existen ejecutando esquema.sql + migraciones."""
     ruta_esquema = Path(__file__).parent / "esquema.sql"
     conexion = obtener_conexion()
     conexion.executescript(ruta_esquema.read_text(encoding="utf-8"))
+
+    # ── Migraciones para BDs existentes (v1 → v2) ──
+    # SQLite no soporta ALTER TABLE ... IF NOT EXISTS,
+    # así que comprobamos las columnas antes de añadirlas.
+    columnas = {
+        fila[1]
+        for fila in conexion.execute("PRAGMA table_info(dispositivos)").fetchall()
+    }
+    if "tipo" not in columnas:
+        conexion.execute(
+            "ALTER TABLE dispositivos ADD COLUMN tipo TEXT NOT NULL DEFAULT 'otro'"
+        )
+    if "zona" not in columnas:
+        conexion.execute("ALTER TABLE dispositivos ADD COLUMN zona TEXT")
+    conexion.commit()
     conexion.close()
 
 

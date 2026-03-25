@@ -78,6 +78,11 @@ def escanear_red() -> dict:
                        WHERE mac = ?""",
                     (ip, hostname, fabricante, mac),
                 )
+                # Registrar presencia
+                bd.ejecutar(
+                    "INSERT INTO presencia (dispositivo_id, escaneo_id, ip) VALUES (?, ?, ?)",
+                    (existente["id"], escaneo_id, ip),
+                )
             else:
                 # Nuevo dispositivo
                 dispositivo_id = bd.ejecutar(
@@ -86,6 +91,12 @@ def escanear_red() -> dict:
                     (mac, ip, hostname, fabricante),
                 )
                 nuevos += 1
+
+                # Registrar presencia del nuevo dispositivo
+                bd.ejecutar(
+                    "INSERT INTO presencia (dispositivo_id, escaneo_id, ip) VALUES (?, ?, ?)",
+                    (dispositivo_id, escaneo_id, ip),
+                )
 
                 # Crear alerta
                 mensaje = (

@@ -14,16 +14,42 @@ def listar_dispositivos(
     confiable: Optional[int] = Query(
         None, description="Filtrar: 1=confiables, 0=desconocidos"
     ),
+    tipo: Optional[str] = Query(
+        None, description="Filtrar por tipo (telefono, portatil, iot, etc.)"
+    ),
+    zona: Optional[str] = Query(
+        None, description="Filtrar por zona (Salon, Despacho, etc.)"
+    ),
 ):
-    """Lista todos los dispositivos, opcionalmente filtrados por confiabilidad."""
+    """Lista dispositivos con filtros opcionales combinables."""
+    where = []
+    parametros = []
+
     if confiable is not None:
-        return bd.consultar_todos(
-            "SELECT * FROM dispositivos WHERE confiable = ? ORDER BY ultima_vez DESC",
-            (confiable,),
-        )
-    return bd.consultar_todos(
-        "SELECT * FROM dispositivos ORDER BY ultima_vez DESC"
+        where.append("confiable = ?")
+        parametros.append(confiable)
+    if tipo is not None:
+        where.append("tipo = ?")
+        parametros.append(tipo)
+    if zona is not None:
+        where.append("zona = ?")
+        parametros.append(zona)
+
+    sql = "SELECT * FROM dispositivos"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY ultima_vez DESC"
+
+    return bd.consultar_todos(sql, tuple(parametros))
+
+
+@ruta.get("/zonas", response_model=list[str])
+def listar_zonas():
+    """Devuelve las zonas distintas usadas (para autocompletado)."""
+    filas = bd.consultar_todos(
+        "SELECT DISTINCT zona FROM dispositivos WHERE zona IS NOT NULL AND zona != '' ORDER BY zona"
     )
+    return [fila["zona"] for fila in filas]
 
 
 @ruta.get("/{dispositivo_id}", response_model=DispositivoRespuesta)
@@ -74,6 +100,12 @@ def actualizar_dispositivo(
     if datos.notas is not None:
         campos.append("notas = ?")
         valores.append(datos.notas)
+    if datos.tipo is not None:
+        campos.append("tipo = ?")
+        valores.append(datos.tipo)
+    if datos.zona is not None:
+        campos.append("zona = ?")
+        valores.append(datos.zona)
 
     if campos:
         valores.append(dispositivo_id)

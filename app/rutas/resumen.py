@@ -35,9 +35,20 @@ def resumen():
         "SELECT inicio FROM escaneos ORDER BY inicio DESC LIMIT 1"
     )
 
+    # Desglose por tipo (solo dispositivos activos en las ultimas 24h)
+    filas_tipo = bd.consultar_todos("""
+        SELECT tipo, COUNT(*) as cuenta
+        FROM dispositivos
+        WHERE ultima_vez >= datetime('now', '-24 hours')
+        GROUP BY tipo
+        ORDER BY cuenta DESC
+    """)
+    por_tipo = {fila["tipo"]: fila["cuenta"] for fila in filas_tipo}
+
     return {
         "dispositivos_activos": contadores["dispositivos_activos"] if contadores else 0,
         "dispositivos_confiables": contadores["dispositivos_confiables"] or 0 if contadores else 0,
         "dispositivos_desconocidos": contadores["dispositivos_desconocidos"] or 0 if contadores else 0,
         "ultimo_escaneo": ultimo["inicio"] if ultimo else None,
+        "por_tipo": por_tipo,
     }
