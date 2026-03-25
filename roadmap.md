@@ -2,15 +2,10 @@
 
 ## Estado actual
 
-**Fecha:** 2026-03-22
+**Fecha:** 2026-03-26
 
-Tabla de dispositivos responsive completada y desplegada. En pantallas ≤ 768 px
-las filas se convierten en tarjetas apiladas con etiquetas (`data-label`) y
-botones de acción accesibles. Corregido también el desbordamiento lateral
-(overflow del wrapper). Commits `c9d7ec4` y `4a7a3e9` subidos a GitHub.
-
-**Próximo paso:** Verificar en móvil que las tarjetas se ven correctamente
-tras desplegar con `actualizar.sh`.
+Implementadas las mejoras de tipo/zona y presencia de dispositivos.
+Desplegado en VM 101 y funcionando.
 
 ---
 
@@ -34,14 +29,28 @@ tras desplegar con `actualizar.sh`.
 - [x] Drawer lateral con navegación entre apps
 - [x] Toggle tema claro/oscuro
 
-### Fase 3 — Mejoras de usabilidad (en curso)
+### Fase 3 — Mejoras de usabilidad ✅
 
 - [x] Tabla responsive — tarjetas en móvil (2026-03-22)
+- [x] Notificaciones ntfy al detectar dispositivo nuevo
+- [x] Agrupación de dispositivos por tipo y zona (2026-03-26)
+- [x] Modal de edición (nombre, tipo, zona) en lugar de prompt (2026-03-26)
+- [x] Filtros combinados: confiabilidad + tipo + zona (2026-03-26)
+- [x] Iconos Material Symbols por tipo de dispositivo (2026-03-26)
 - [ ] Confirmación antes de cambiar estado de un dispositivo
-- [ ] Notificaciones ntfy al detectar dispositivo nuevo
 
-### Fase 4 — Futuro
+### Fase 4 — Presencia ✅
 
+- [x] Tabla `presencia` — registro de cada avistamiento (2026-03-26)
+- [x] Tabla `presencia_diaria` — agregación para datos > 180 días (2026-03-26)
+- [x] Job nocturno de agregación (APScheduler, 03:00) (2026-03-26)
+- [x] Endpoint presencia por dispositivo con cálculo de franjas (2026-03-26)
+- [x] Endpoint timeline general por día (2026-03-26)
+- [x] Pestaña "Presencia" con timeline Gantt visual (2026-03-26)
+
+### Fase 5 — Futuro
+
+- [ ] Vista agrupada por zona (dispositivos agrupados en vez de lista plana)
+- [ ] Auto-detección de tipo por fabricante (heurística + sugerencia)
 - [ ] Historial de escaneos con gráfico temporal
-- [ ] Agrupación de dispositivos por tipo
 - [ ] Exportar listado de dispositivos

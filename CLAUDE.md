@@ -17,16 +17,17 @@ Escanea la LAN con nmap/ARP, detecta dispositivos nuevos y envía alertas por nt
 ```
 ReDo/
 ├── app/
-│   ├── principal.py        → Punto de entrada FastAPI
-│   ├── bd.py               → Acceso a SQLite (redo.db)
+│   ├── principal.py        → Punto de entrada FastAPI + APScheduler
+│   ├── bd.py               → Acceso a SQLite (redo.db) + migraciones v1→v2
 │   ├── config.py           → Variables de entorno
-│   ├── escaner.py          → Lógica de escaneo ARP/nmap
-│   ├── esquema.sql         → DDL de la base de datos
+│   ├── escaner.py          → Lógica de escaneo ARP/nmap + registro de presencia
+│   ├── esquema.sql         → DDL de la base de datos (v2: tipo, zona, presencia)
 │   ├── modelos.py          → Modelos Pydantic
 │   ├── notificador.py      → Alertas ntfy
 │   └── rutas/
-│       ├── dispositivos.py → CRUD dispositivos (GET, PUT)
+│       ├── dispositivos.py → CRUD dispositivos (GET, PUT) + filtros tipo/zona
 │       ├── escaneos.py     → POST /api/escanear + SSE /api/eventos
+│       ├── presencia.py    → GET presencia por dispositivo + timeline + agregación
 │       └── resumen.py      → GET /api/estado + GET /api/logs
 ├── static/
 │   └── index.html          → Frontend completo (SPA vanilla)
@@ -65,12 +66,15 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/estado` | Resumen: total, confiables, desconocidos, último escaneo |
-| GET | `/api/dispositivos` | Lista todos los dispositivos |
-| PUT | `/api/dispositivos/{mac}` | Editar nombre, tipo, notas, trusted |
+| GET | `/api/estado` | Resumen: total, confiables, desconocidos, último escaneo, `por_tipo` |
+| GET | `/api/dispositivos` | Lista dispositivos (filtros: `confiable`, `tipo`, `zona`) |
+| GET | `/api/dispositivos/zonas` | Lista de zonas en uso (para autocompletado) |
+| PUT | `/api/dispositivos/{mac}` | Editar nombre, tipo, zona, notas, confiable |
 | POST | `/api/escanear` | Lanza escaneo manual |
 | GET | `/api/eventos` | SSE — eventos `fin_escaneo` y `error_escaneo` |
 | GET | `/api/logs` | Historial de escaneos |
+| GET | `/api/presencia/dispositivos/{id}` | Presencia de un dispositivo (`?dias=7`) |
+| GET | `/api/presencia/timeline` | Timeline de todos los dispositivos (`?fecha=YYYY-MM-DD`) |
 
 ---
 
@@ -81,6 +85,7 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 | `REDO_DB_PATH` | Ruta a la BD SQLite (por defecto `data/redo.db`) |
 | `REDO_NETWORK` | Red a escanear (ej: `192.168.31.0/24`) |
 | `REDO_SCAN_INTERVAL` | Intervalo de escaneo automático en segundos |
+| `REDO_PRESENCIA_DIAS` | Días de detalle de presencia antes de agregar (defecto 180) |
 | `NTFY_TOPIC` | Topic de ntfy para alertas |
 | `PORT` | Puerto del servidor (por defecto 8083) |
 

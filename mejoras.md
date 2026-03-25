@@ -2,7 +2,7 @@
 
 > Mejoras internas de ReDo: esquema de datos, escáner, API y frontend.
 > Creado: 2026-03-25
-> Estado: borrador para discusión
+> Estado: **IMPLEMENTADO** (2026-03-26) — commit `b001e05` + fix `b0381f5`
 
 ---
 
@@ -321,12 +321,12 @@ No es 100% fiable (un Apple puede ser un MacBook, no un iPhone), por eso solo se
 
 Las dos mejoras son independientes pero complementarias. Propuesta basada en valor/esfuerzo:
 
-| Prioridad | Mejora | Esfuerzo | Valor |
-|---|---|---|---|
-| 1 | Tipo y zona | Bajo-medio | Alto (mejora inmediata en usabilidad) |
-| 2 | Presencia | Medio | Alto (nueva funcionalidad) |
+| Prioridad | Mejora | Esfuerzo | Valor | Estado |
+|---|---|---|---|---|
+| 1 | Tipo y zona | Bajo-medio | Alto | **Implementado** (2026-03-26) |
+| 2 | Presencia | Medio | Alto | **Implementado** (2026-03-26) |
 
-**Si se hacen las dos**, el formulario de edición de dispositivo se amplía una sola vez (tipo + zona en la misma iteración, presencia como visualización adicional).
+Ambas se implementaron juntas en la misma iteración — el formulario de edición se amplió una sola vez.
 
 ### Sinergia entre ambas mejoras
 
