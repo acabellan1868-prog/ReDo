@@ -315,6 +315,157 @@
             font-style: italic;
         }
 
+        .timeline-fila { cursor: pointer; }
+        .timeline-fila:hover { background: var(--surface-container); border-radius: var(--radio-sm); }
+        .timeline-fila--seleccionada { background: var(--surface-container-high); border-radius: var(--radio-sm); }
+
+        /* ── Detalle de presencia de un dispositivo ── */
+        .detalle-presencia {
+            margin-top: var(--gap-lg);
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-xl);
+            padding: var(--gap-lg);
+            box-shadow: var(--sombra-sm);
+            display: none;
+        }
+
+        .detalle-presencia--visible { display: block; }
+
+        .detalle-cabecera {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: var(--gap-sm);
+            margin-bottom: var(--gap-lg);
+        }
+
+        .detalle-titulo {
+            display: flex;
+            align-items: center;
+            gap: var(--gap-sm);
+            font-family: var(--fuente-titular);
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--on-surface);
+        }
+
+        .detalle-controles {
+            display: flex;
+            align-items: center;
+            gap: var(--gap-sm);
+        }
+
+        .detalle-btn-dias {
+            padding: 0.3rem 0.7rem;
+            border: 1px solid var(--surface-container-high);
+            border-radius: var(--radio-md);
+            background: var(--surface-container);
+            font-family: var(--fuente-cuerpo);
+            font-size: 0.75rem;
+            color: var(--on-surface-variant);
+            cursor: pointer;
+            transition: all var(--transicion);
+        }
+
+        .detalle-btn-dias--activo {
+            background: var(--primary);
+            color: var(--on-primary);
+            border-color: var(--primary);
+        }
+
+        .detalle-cerrar {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--on-surface-variant);
+            padding: 0.2rem;
+            border-radius: var(--radio-sm);
+            transition: color var(--transicion);
+        }
+
+        .detalle-cerrar:hover { color: var(--on-surface); }
+
+        .detalle-dia {
+            display: grid;
+            grid-template-columns: 90px 1fr 70px;
+            gap: var(--gap-sm);
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--surface-container);
+        }
+
+        .detalle-dia:last-child { border-bottom: none; }
+
+        .detalle-dia__fecha {
+            font-family: var(--fuente-titular);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--on-surface);
+        }
+
+        .detalle-dia__hoy { color: var(--primary); }
+
+        .detalle-dia__barra {
+            position: relative;
+            height: 24px;
+            background: var(--surface-container);
+            border-radius: var(--radio-sm);
+            overflow: hidden;
+        }
+
+        .detalle-dia__franja {
+            position: absolute;
+            top: 3px;
+            bottom: 3px;
+            background: linear-gradient(135deg, var(--primary), var(--exito));
+            border-radius: var(--radio-sm);
+            opacity: 0.85;
+        }
+
+        .detalle-dia__franja:hover { opacity: 1; }
+
+        .detalle-dia__tiempo {
+            font-size: 0.7rem;
+            color: var(--on-surface-variant);
+            text-align: right;
+            font-family: var(--fuente-titular);
+            font-weight: 600;
+        }
+
+        .detalle-horas-cabecera {
+            display: grid;
+            grid-template-columns: 90px 1fr 70px;
+            gap: var(--gap-sm);
+            margin-bottom: 0.3rem;
+        }
+
+        .detalle-horas-marcas {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.55rem;
+            color: var(--on-surface-variant);
+            font-family: var(--fuente-titular);
+            font-weight: 600;
+        }
+
+        .detalle-sin-datos {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--on-surface-variant);
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            .detalle-dia {
+                grid-template-columns: 60px 1fr 50px;
+            }
+            .detalle-horas-cabecera {
+                grid-template-columns: 60px 1fr 50px;
+            }
+        }
+
         /* ── Modal de edicion ── */
         .modal-overlay {
             position: fixed;
@@ -655,6 +806,7 @@
             <div class="timeline-container" id="timelineContainer">
                 <div class="timeline-vacio">Selecciona una fecha para ver la presencia</div>
             </div>
+            <div class="detalle-presencia" id="detallePresencia"></div>
         </div>
 
     </main>
@@ -833,7 +985,7 @@
                             ? '<span class="zona-badge">' + d.zona + '</span>'
                             : '<span class="hostname">—</span>';
 
-                        return '<tr>' +
+                        return '<tr data-id="' + d.id + '" data-mac="' + d.mac + '" data-nombre="' + (nombre).replace(/"/g, '&quot;') + '" data-tipo="' + d.tipo + '">' +
                             '<td data-label="Tipo"><span class="material-symbols-outlined icono-tipo" title="' + d.tipo + '">' + icono + '</span></td>' +
                             '<td data-label="IP"><strong>' + (d.ip || '?') + '</strong></td>' +
                             '<td data-label="Dispositivo">' + info + '</td>' +
@@ -928,9 +1080,22 @@
            Ver presencia de un dispositivo (cambia a pestana presencia)
            ============================================================ */
         function verPresencia(id) {
-            // TODO: En una futura iteracion, esto podria abrir un detalle
-            // individual. Por ahora, cambia a la pestana de presencia.
+            // Buscar nombre y tipo del dispositivo en la tabla actual
+            var nombre = id;
+            var tipo = 'otro';
+            var filas = document.querySelectorAll('#tablaDispositivos tr[data-mac]');
+            filas.forEach(function(fila) {
+                if (fila.getAttribute('data-id') === String(id)) {
+                    nombre = fila.getAttribute('data-nombre') || id;
+                    tipo = fila.getAttribute('data-tipo') || 'otro';
+                }
+            });
+
+            // Cambiar a pestana presencia
             document.querySelector('[data-tab="presencia"]').click();
+
+            // Cargar detalle del dispositivo
+            cargarDetalleDispositivo(id, nombre, tipo);
         }
 
         /* ============================================================
@@ -998,6 +1163,7 @@
             var fecha = inputFecha.value;
             if (!fecha) return;
 
+            cerrarDetalle();
             var container = document.getElementById('timelineContainer');
             container.innerHTML = '<div class="timeline-vacio">Cargando...</div>';
 
@@ -1039,7 +1205,9 @@
                             '</div>';
                         });
 
-                        html += '<div class="timeline-fila">' +
+                        html += '<div class="timeline-fila" data-disp-id="' + disp.dispositivo_id + '" ' +
+                            'data-disp-nombre="' + (nombre).replace(/"/g, '&quot;') + '" ' +
+                            'data-disp-tipo="' + disp.tipo + '">' +
                             '<div class="timeline-dispositivo">' +
                                 '<span class="material-symbols-outlined icono-tipo" style="font-size:1rem">' + icono + '</span>' +
                                 '<span class="timeline-dispositivo__nombre">' + nombre + '</span>' +
@@ -1049,6 +1217,21 @@
                     });
 
                     container.innerHTML = html;
+
+                    // Hacer filas clicables
+                    container.querySelectorAll('.timeline-fila').forEach(function(fila) {
+                        fila.addEventListener('click', function() {
+                            container.querySelectorAll('.timeline-fila--seleccionada').forEach(function(f) {
+                                f.classList.remove('timeline-fila--seleccionada');
+                            });
+                            fila.classList.add('timeline-fila--seleccionada');
+                            cargarDetalleDispositivo(
+                                fila.getAttribute('data-disp-id'),
+                                fila.getAttribute('data-disp-nombre'),
+                                fila.getAttribute('data-disp-tipo')
+                            );
+                        });
+                    });
                 })
                 .catch(function() {
                     container.innerHTML = '<div class="timeline-vacio">Error al cargar la presencia</div>';
@@ -1058,6 +1241,150 @@
         function horaAMinutos(hhmm) {
             var partes = hhmm.split(':');
             return parseInt(partes[0]) * 60 + parseInt(partes[1]);
+        }
+
+        /* ============================================================
+           Detalle de presencia de un dispositivo
+           ============================================================ */
+        var detalleDiasActual = 7;
+        var detalleDispIdActual = null;
+        var detalleDispNombreActual = null;
+        var detalleDispTipoActual = null;
+
+        function cargarDetalleDispositivo(id, nombre, tipo) {
+            detalleDispIdActual = id;
+            detalleDispNombreActual = nombre;
+            detalleDispTipoActual = tipo || 'otro';
+            renderizarDetalle();
+        }
+
+        function renderizarDetalle() {
+            var id = detalleDispIdActual;
+            var nombre = detalleDispNombreActual;
+            var tipo = detalleDispTipoActual;
+            var dias = detalleDiasActual;
+            var panel = document.getElementById('detallePresencia');
+            var icono = TIPOS_ICONO[tipo] || 'device_unknown';
+
+            panel.classList.add('detalle-presencia--visible');
+            panel.innerHTML = '<div class="detalle-cabecera">' +
+                '<div class="detalle-titulo">' +
+                    '<span class="material-symbols-outlined" style="font-size:1.2rem">' + icono + '</span>' +
+                    nombre +
+                '</div>' +
+                '<div class="detalle-controles">' +
+                    '<button class="detalle-btn-dias' + (dias === 7 ? ' detalle-btn-dias--activo' : '') + '" data-dias="7">7d</button>' +
+                    '<button class="detalle-btn-dias' + (dias === 14 ? ' detalle-btn-dias--activo' : '') + '" data-dias="14">14d</button>' +
+                    '<button class="detalle-btn-dias' + (dias === 30 ? ' detalle-btn-dias--activo' : '') + '" data-dias="30">30d</button>' +
+                    '<button class="detalle-cerrar" title="Cerrar">' +
+                        '<span class="material-symbols-outlined" style="font-size:1.2rem">close</span>' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="detalle-sin-datos">Cargando...</div>';
+
+            // Eventos de botones de dias
+            panel.querySelectorAll('.detalle-btn-dias').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    detalleDiasActual = parseInt(this.getAttribute('data-dias'));
+                    renderizarDetalle();
+                });
+            });
+
+            panel.querySelector('.detalle-cerrar').addEventListener('click', cerrarDetalle);
+
+            fetch(BASE + '/api/presencia/dispositivos/' + id + '?dias=' + dias)
+                .then(function(r) { return r.json(); })
+                .then(function(datos) {
+                    if (!datos.dias || !datos.dias.length) {
+                        panel.querySelector('.detalle-sin-datos').textContent = 'Sin datos de presencia en los ultimos ' + dias + ' dias';
+                        return;
+                    }
+
+                    // Cabecera de horas
+                    var marcas = '';
+                    for (var h = 0; h <= 24; h += 3) {
+                        marcas += '<span>' + String(h).padStart(2, '0') + '</span>';
+                    }
+
+                    var html = '<div class="detalle-horas-cabecera">' +
+                        '<div></div>' +
+                        '<div class="detalle-horas-marcas">' + marcas + '</div>' +
+                        '<div></div>' +
+                    '</div>';
+
+                    var hoy = new Date().toISOString().split('T')[0];
+
+                    // Invertir para mostrar mas reciente arriba
+                    datos.dias.forEach(function(dia) {
+                        var fechaObj = new Date(dia.fecha + 'T00:00:00');
+                        var etiqueta = fechaObj.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                        var esHoy = dia.fecha === hoy;
+
+                        var barraHtml = '';
+                        if (dia.franjas && dia.franjas.length) {
+                            dia.franjas.forEach(function(f) {
+                                var desde = horaAMinutos(f.desde);
+                                var hasta = horaAMinutos(f.hasta);
+                                var anchoMin = Math.max((hasta - desde) / 1440 * 100, 0.5);
+                                var izq = desde / 1440 * 100;
+                                barraHtml += '<div class="detalle-dia__franja" ' +
+                                    'style="left:' + izq + '%;width:' + anchoMin + '%" ' +
+                                    'title="' + f.desde + ' - ' + f.hasta + '">' +
+                                '</div>';
+                            });
+                        }
+
+                        // Formato de tiempo conectado
+                        var tiempoTexto = '';
+                        if (dia.minutos_conectado >= 60) {
+                            var h = Math.floor(dia.minutos_conectado / 60);
+                            var m = dia.minutos_conectado % 60;
+                            tiempoTexto = h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
+                        } else {
+                            tiempoTexto = dia.minutos_conectado + 'm';
+                        }
+
+                        html += '<div class="detalle-dia">' +
+                            '<div class="detalle-dia__fecha' + (esHoy ? ' detalle-dia__hoy' : '') + '">' + etiqueta + '</div>' +
+                            '<div class="detalle-dia__barra">' + barraHtml + '</div>' +
+                            '<div class="detalle-dia__tiempo">' + tiempoTexto + '</div>' +
+                        '</div>';
+                    });
+
+                    // Reemplazar solo el contenido debajo de la cabecera
+                    var cabecera = panel.querySelector('.detalle-cabecera');
+                    panel.innerHTML = '';
+                    panel.appendChild(cabecera);
+                    panel.insertAdjacentHTML('beforeend', html);
+
+                    // Re-enlazar eventos
+                    panel.querySelectorAll('.detalle-btn-dias').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            detalleDiasActual = parseInt(this.getAttribute('data-dias'));
+                            renderizarDetalle();
+                        });
+                    });
+                    panel.querySelector('.detalle-cerrar').addEventListener('click', cerrarDetalle);
+                })
+                .catch(function() {
+                    var sinDatos = panel.querySelector('.detalle-sin-datos');
+                    if (sinDatos) sinDatos.textContent = 'Error al cargar el detalle';
+                });
+
+            // Scroll al panel
+            setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+        }
+
+        function cerrarDetalle() {
+            var panel = document.getElementById('detallePresencia');
+            panel.classList.remove('detalle-presencia--visible');
+            panel.innerHTML = '';
+            detalleDispIdActual = null;
+            var container = document.getElementById('timelineContainer');
+            container.querySelectorAll('.timeline-fila--seleccionada').forEach(function(f) {
+                f.classList.remove('timeline-fila--seleccionada');
+            });
         }
 
         /* ============================================================
