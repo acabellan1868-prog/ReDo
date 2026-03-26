@@ -103,6 +103,9 @@ def actualizar_dispositivo(
     if datos.tipo is not None:
         campos.append("tipo = ?")
         valores.append(datos.tipo)
+        # Si el usuario cambia el tipo manualmente, ya no es auto-detectado
+        campos.append("tipo_auto = 0")
+
     if datos.zona is not None:
         campos.append("zona = ?")
         valores.append(datos.zona)

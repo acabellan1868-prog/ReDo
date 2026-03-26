@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS dispositivos (
     confiable INTEGER NOT NULL DEFAULT 0,
     notas TEXT,
     tipo TEXT NOT NULL DEFAULT 'otro',
+    tipo_auto INTEGER NOT NULL DEFAULT 0,
     zona TEXT
 );
 

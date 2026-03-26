@@ -43,6 +43,10 @@ def inicializar_bd():
             conexion.execute(
                 "ALTER TABLE dispositivos ADD COLUMN tipo TEXT NOT NULL DEFAULT 'otro'"
             )
+        if "tipo_auto" not in columnas:
+            conexion.execute(
+                "ALTER TABLE dispositivos ADD COLUMN tipo_auto INTEGER NOT NULL DEFAULT 0"
+            )
         if "zona" not in columnas:
             conexion.execute("ALTER TABLE dispositivos ADD COLUMN zona TEXT")
         conexion.commit()

@@ -13,6 +13,83 @@ from app.notificador import notificar_dispositivo_nuevo
 
 logger = logging.getLogger("redo.escaner")
 
+# ── Reglas de auto-deteccion de tipo por fabricante ──
+# Cada entrada: (fragmento_fabricante_en_minusculas, tipo_sugerido)
+# Se evaluan en orden; la primera coincidencia gana.
+REGLAS_TIPO_FABRICANTE = [
+    # Telefonos / tablets
+    ("xiaomi", "telefono"),
+    ("huawei", "telefono"),
+    ("oneplus", "telefono"),
+    ("oppo", "telefono"),
+    ("realme", "telefono"),
+    ("samsung", "telefono"),
+    # IoT
+    ("espressif", "iot"),
+    ("shelly", "iot"),
+    ("tuya", "iot"),
+    ("ikea", "iot"),
+    ("sonoff", "iot"),
+    ("tasmota", "iot"),
+    ("broadlink", "iot"),
+    ("yeelight", "iot"),
+    ("meross", "iot"),
+    ("smart life", "iot"),
+    ("tp-link smart", "iot"),
+    # Impresoras
+    ("hp inc", "impresora"),
+    ("canon", "impresora"),
+    ("brother", "impresora"),
+    ("epson", "impresora"),
+    ("lexmark", "impresora"),
+    # Servidores / infra
+    ("raspberry", "servidor"),
+    ("proxmox", "servidor"),
+    # Red
+    ("tp-link", "router"),
+    ("netgear", "router"),
+    ("ubiquiti", "router"),
+    ("mikrotik", "router"),
+    ("cisco", "router"),
+    ("asus", "router"),
+    ("zte", "router"),
+    # Portátiles (fabricantes de tarjetas wifi internas)
+    ("liteon", "portatil"),
+    ("intel", "portatil"),
+    ("qualcomm", "portatil"),
+    ("realtek", "portatil"),
+    ("dell", "portatil"),
+    ("lenovo", "portatil"),
+    ("hewlett", "portatil"),
+    # TV / streaming
+    ("amazon", "tv"),
+    ("roku", "tv"),
+    ("lg electro", "tv"),
+    ("sony", "tv"),
+    # Apple (ambiguo: puede ser telefono, portatil o tablet)
+    ("apple", "telefono"),
+    # Consolas
+    ("nintendo", "consola"),
+    ("microsoft", "consola"),
+    ("sony interactive", "consola"),
+]
+
+
+def inferir_tipo(fabricante: str | None) -> str | None:
+    """
+    Intenta inferir el tipo de dispositivo a partir del nombre del fabricante.
+
+    Returns:
+        El tipo sugerido (str) o None si no hay coincidencia.
+    """
+    if not fabricante:
+        return None
+    fab_lower = fabricante.lower()
+    for fragmento, tipo in REGLAS_TIPO_FABRICANTE:
+        if fragmento in fab_lower:
+            return tipo
+    return None
+
 
 def escanear_red() -> dict:
     """
@@ -84,12 +161,23 @@ def escanear_red() -> dict:
                     (existente["id"], escaneo_id, ip),
                 )
             else:
-                # Nuevo dispositivo
-                dispositivo_id = bd.ejecutar(
-                    """INSERT INTO dispositivos (mac, ip, hostname, fabricante)
-                       VALUES (?, ?, ?, ?)""",
-                    (mac, ip, hostname, fabricante),
-                )
+                # Nuevo dispositivo — intentar inferir tipo por fabricante
+                tipo_sugerido = inferir_tipo(fabricante)
+                if tipo_sugerido:
+                    dispositivo_id = bd.ejecutar(
+                        """INSERT INTO dispositivos (mac, ip, hostname, fabricante, tipo, tipo_auto)
+                           VALUES (?, ?, ?, ?, ?, 1)""",
+                        (mac, ip, hostname, fabricante, tipo_sugerido),
+                    )
+                    logger.info(
+                        f"Auto-tipo: {mac} ({fabricante}) → {tipo_sugerido}"
+                    )
+                else:
+                    dispositivo_id = bd.ejecutar(
+                        """INSERT INTO dispositivos (mac, ip, hostname, fabricante)
+                           VALUES (?, ?, ?, ?)""",
+                        (mac, ip, hostname, fabricante),
+                    )
                 nuevos += 1
 
                 # Registrar presencia del nuevo dispositivo

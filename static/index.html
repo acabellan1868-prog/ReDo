@@ -524,6 +524,15 @@
             margin-bottom: 0.3rem;
         }
 
+        .modal__sugerido {
+            font-weight: 400;
+            font-size: 0.6rem;
+            text-transform: none;
+            letter-spacing: normal;
+            color: var(--primary);
+            font-style: italic;
+        }
+
         .modal__input, .modal__select {
             width: 100%;
             padding: 0.5rem 0.7rem;
@@ -690,7 +699,7 @@
                 <input class="modal__input" id="modalNombre" type="text" placeholder="Ej: Movil Lucia, Impresora HP...">
             </div>
             <div class="modal__campo">
-                <label class="modal__label" for="modalTipo">Tipo</label>
+                <label class="modal__label" for="modalTipo">Tipo <span id="modalTipoAuto" class="modal__sugerido"></span></label>
                 <select class="modal__select" id="modalTipo">
                     <option value="otro">Sin clasificar</option>
                     <option value="telefono">Telefono</option>
@@ -1030,6 +1039,13 @@
                     document.getElementById('modalNombre').value = d.notas || '';
                     document.getElementById('modalTipo').value = d.tipo || 'otro';
                     document.getElementById('modalZona').value = d.zona || '';
+                    // Indicador de tipo sugerido por fabricante
+                    var spanAuto = document.getElementById('modalTipoAuto');
+                    if (d.tipo_auto) {
+                        spanAuto.textContent = '(sugerido por fabricante: ' + (d.fabricante || '?') + ')';
+                    } else {
+                        spanAuto.textContent = '';
+                    }
                     document.getElementById('modalTitulo').textContent =
                         'Editar: ' + (d.notas || d.mac);
                     document.getElementById('modalOverlay').classList.add('modal-overlay--visible');

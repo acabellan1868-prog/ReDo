@@ -21,6 +21,7 @@ class DispositivoRespuesta(BaseModel):
     confiable: int = 0
     notas: Optional[str] = None
     tipo: str = "otro"
+    tipo_auto: int = 0
     zona: Optional[str] = None
 
 
