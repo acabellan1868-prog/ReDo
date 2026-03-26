@@ -37,7 +37,7 @@ Desplegado en VM 101 y funcionando.
 - [x] Modal de edición (nombre, tipo, zona) en lugar de prompt (2026-03-26)
 - [x] Filtros combinados: confiabilidad + tipo + zona (2026-03-26)
 - [x] Iconos Material Symbols por tipo de dispositivo (2026-03-26)
-- [ ] Confirmación antes de cambiar estado de un dispositivo
+- [x] ~~Confirmación antes de cambiar estado~~ — Descartado: el modal de edición ya actúa como confirmación, y es más ágil sin paso extra (2026-03-26)
 
 ### Fase 4 — Presencia ✅
 
