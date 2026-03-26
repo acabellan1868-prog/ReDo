@@ -55,6 +55,6 @@ Desplegado en VM 101 y funcionando.
 
 - [ ] Pantalla de configuración en ReDo (red, intervalo, presencia días, NTFY)
 - [ ] Vista agrupada por zona (dispositivos agrupados en vez de lista plana)
-- [ ] Auto-detección de tipo por fabricante (heurística + sugerencia)
+- [x] Auto-detección de tipo por fabricante — 60+ reglas, campo tipo_auto, indicador en modal (2026-03-26)
 - [ ] Historial de escaneos con gráfico temporal
 - [ ] Exportar listado de dispositivos
