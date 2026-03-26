@@ -53,6 +53,31 @@ def inicializar_bd():
 
     # ── Esquema: crea tablas que no existan (presencia, presencia_diaria, etc.) ──
     conexion.executescript(ruta_esquema.read_text(encoding="utf-8"))
+
+    # ── Migración puntual: auto-detectar tipo en dispositivos existentes ──
+    # Solo toca dispositivos con tipo='otro' (sin clasificar) y fabricante conocido.
+    # Se importa aquí (lazy) para evitar dependencia circular.
+    from app.escaner import inferir_tipo
+
+    sin_clasificar = conexion.execute(
+        "SELECT id, fabricante FROM dispositivos WHERE tipo = 'otro' AND fabricante IS NOT NULL"
+    ).fetchall()
+    reclasificados = 0
+    for fila in sin_clasificar:
+        tipo_sugerido = inferir_tipo(fila["fabricante"])
+        if tipo_sugerido:
+            conexion.execute(
+                "UPDATE dispositivos SET tipo = ?, tipo_auto = 1 WHERE id = ?",
+                (tipo_sugerido, fila["id"]),
+            )
+            reclasificados += 1
+    if reclasificados:
+        conexion.commit()
+        import logging
+        logging.getLogger("redo.bd").info(
+            f"Migración auto-tipo: {reclasificados} dispositivos reclasificados"
+        )
+
     conexion.close()
 
 
