@@ -458,12 +458,19 @@
         }
 
         @media (max-width: 600px) {
+            .detalle-presencia { padding: var(--gap-md); }
+            .detalle-cabecera { flex-direction: column; align-items: flex-start; }
             .detalle-dia {
-                grid-template-columns: 60px 1fr 50px;
+                grid-template-columns: 50px 1fr 40px;
             }
+            .detalle-dia__fecha { font-size: 0.65rem; }
+            .detalle-dia__tiempo { font-size: 0.6rem; }
             .detalle-horas-cabecera {
-                grid-template-columns: 60px 1fr 50px;
+                grid-template-columns: 50px 1fr 40px;
             }
+            /* En movil, mostrar solo horas cada 3 */
+            .detalle-horas-marcas span { display: none; }
+            .detalle-horas-marcas span:nth-child(3n+1) { display: inline; }
         }
 
         /* ── Modal de edicion ── */
@@ -1301,9 +1308,9 @@
                         return;
                     }
 
-                    // Cabecera de horas
+                    // Cabecera de horas (todas las horas, 0-24)
                     var marcas = '';
-                    for (var h = 0; h <= 24; h += 3) {
+                    for (var h = 0; h <= 24; h++) {
                         marcas += '<span>' + String(h).padStart(2, '0') + '</span>';
                     }
 
