@@ -47,6 +47,9 @@ Desplegado en VM 101 y funcionando.
 - [x] Endpoint presencia por dispositivo con cálculo de franjas (2026-03-26)
 - [x] Endpoint timeline general por día (2026-03-26)
 - [x] Pestaña "Presencia" con timeline Gantt visual (2026-03-26)
+- [x] Panel de detalle por dispositivo — clic en fila para ver presencia individual con barras por día y franjas horarias (2026-03-26)
+- [x] Marcas de hora completas (0-24) en desktop, cada 3h en móvil (2026-03-26)
+- [x] Responsive completo del panel de detalle (columnas, fuentes, padding adaptados a móvil) (2026-03-26)
 
 ### Fase 5 — Configuración y mejoras pendientes
 
