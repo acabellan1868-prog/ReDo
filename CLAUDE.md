@@ -28,6 +28,7 @@ ReDo/
 │       ├── dispositivos.py → CRUD dispositivos (GET, PUT) + filtros tipo/zona
 │       ├── escaneos.py     → POST /api/escanear + SSE /api/eventos
 │       ├── presencia.py    → GET presencia por dispositivo + timeline + agregación
+│       ├── alertas.py      → GET/POST/DELETE /api/alertas (centro de alertas)
 │       └── resumen.py      → GET /api/estado + GET /api/logs
 ├── static/
 │   └── index.html          → Frontend completo (SPA vanilla)
@@ -75,6 +76,9 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 | GET | `/api/logs` | Historial de escaneos |
 | GET | `/api/presencia/dispositivos/{id}` | Presencia de un dispositivo (`?dias=7`) |
 | GET | `/api/presencia/timeline` | Timeline de todos los dispositivos (`?fecha=YYYY-MM-DD`) |
+| GET | `/api/alertas` | Alertas: `modulo: "redo"`, activas primero, límite 50 |
+| POST | `/api/alertas/{id}/resolver` | Marcar alerta como resuelta |
+| DELETE | `/api/alertas/{id}` | Eliminar alerta |
 
 ---
 
