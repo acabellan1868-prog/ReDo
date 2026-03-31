@@ -55,6 +55,7 @@ class AlertaRespuesta(BaseModel):
     dispositivo_id: Optional[int] = None
     fecha: Optional[str] = None
     enviada: int = 0
+    resuelta: int = 0
 
 
 # ============================================================

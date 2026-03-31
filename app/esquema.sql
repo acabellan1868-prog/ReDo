@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS alertas (
     mensaje TEXT NOT NULL,
     dispositivo_id INTEGER REFERENCES dispositivos(id),
     fecha TEXT NOT NULL DEFAULT (datetime('now')),
-    enviada INTEGER NOT NULL DEFAULT 0
+    enviada INTEGER NOT NULL DEFAULT 0,
+    resuelta INTEGER NOT NULL DEFAULT 0
 );
 
 -- Historial de presencia (cada avistamiento individual)

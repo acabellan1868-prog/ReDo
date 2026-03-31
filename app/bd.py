@@ -51,6 +51,18 @@ def inicializar_bd():
             conexion.execute("ALTER TABLE dispositivos ADD COLUMN zona TEXT")
         conexion.commit()
 
+    # ── Migración: añadir campo resuelta a alertas (centro de alertas) ──
+    if "alertas" in tablas:
+        columnas_alertas = {
+            fila[1]
+            for fila in conexion.execute("PRAGMA table_info(alertas)").fetchall()
+        }
+        if "resuelta" not in columnas_alertas:
+            conexion.execute(
+                "ALTER TABLE alertas ADD COLUMN resuelta INTEGER NOT NULL DEFAULT 0"
+            )
+            conexion.commit()
+
     # ── Esquema: crea tablas que no existan (presencia, presencia_diaria, etc.) ──
     conexion.executescript(ruta_esquema.read_text(encoding="utf-8"))
 
