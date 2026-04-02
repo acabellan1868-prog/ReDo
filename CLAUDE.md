@@ -70,12 +70,15 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 | GET | `/api/resumen` | Resumen: total, confiables, desconocidos, último escaneo, `por_tipo` |
 | GET | `/api/dispositivos` | Lista dispositivos (filtros: `confiable`, `tipo`, `zona`) |
 | GET | `/api/dispositivos/zonas` | Lista de zonas en uso (para autocompletado) |
+| GET | `/api/dispositivos/exportar/csv` | Descarga CSV de dispositivos (respeta filtros) |
+| GET | `/api/dispositivos/exportar/json` | Descarga JSON de dispositivos (respeta filtros) |
 | GET | `/api/tipos` | Catalogo de tipos de dispositivo (clave, nombre, icono) |
 | POST | `/api/tipos` | Crear tipo nuevo (clave, nombre, icono) |
 | PUT | `/api/tipos/{clave}` | Editar tipo (nombre, icono) |
 | DELETE | `/api/tipos/{clave}` | Eliminar tipo (reasigna dispositivos a 'otro') |
 | PUT | `/api/dispositivos/{mac}` | Editar nombre, tipo, zona, notas, confiable |
 | POST | `/api/escanear` | Lanza escaneo manual |
+| GET | `/api/escaneos/estadisticas/por-fecha` | Estadísticas diarias de escaneos (gráficos) |
 | GET | `/api/eventos` | SSE — eventos `fin_escaneo` y `error_escaneo` |
 | GET | `/api/logs` | Historial de escaneos |
 | GET | `/api/presencia/dispositivos/{id}` | Presencia de un dispositivo (`?dias=7`) |

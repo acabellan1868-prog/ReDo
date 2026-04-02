@@ -4,6 +4,86 @@ Registro detallado del trabajo día a día.
 
 ---
 
+## 2026-04-02 — Fase 5: 3 tareas completadas ✅
+
+### Tarea 1: Exportar CSV/JSON ✅
+
+**Backend (app/rutas/dispositivos.py):**
+- [x] Importaciones: `io`, `csv`, `StreamingResponse`, `JSONResponse`
+- [x] Endpoint `GET /api/dispositivos/exportar/csv` con filtros aplicados
+- [x] Endpoint `GET /api/dispositivos/exportar/json` con filtros aplicados
+- [x] CSV generado con csv.DictWriter (escapa caracteres especiales)
+- [x] JSON retorna datos completos
+- [x] Headers HTTP de descarga (attachment)
+
+**Frontend (static/index.html):**
+- [x] Botón "Descargar" en toolbar con dropdown CSS
+- [x] Opciones: CSV / JSON
+- [x] Respeta filtros actuales (confiable, tipo, zona)
+- [x] Dropdown cierra al hacer clic fuera
+- [x] Nombre de archivo incluye timestamp
+
+**Testing en VM:** ✅
+```bash
+curl "http://192.168.31.131/red/api/dispositivos/exportar/csv?tipo=iot" > dispositivos.csv
+```
+
+---
+
+### Tarea 2: Vista agrupada por zona ✅
+
+**Backend:** Sin cambios requeridos (agrupación en frontend)
+
+**Frontend (static/index.html):**
+- [x] Variable global `vistaAgrupada` para estado
+- [x] Botón toggle "Vista: Lista / Vista: Agrupada" en toolbar
+- [x] CSS grid para tarjetas responsivas (minmax 220px)
+- [x] Función `renderizarAgrupado()` que agrupa por zona con Array.reduce()
+- [x] Tarjetas con: icono tipo, nombre, MAC, IP, estado (badge), botones acción
+- [x] Contador de dispositivos por zona
+- [x] Zonas ordenadas alfabéticamente
+- [x] Fallback a "Sin zona" para dispositivos sin zona
+- [x] Mostrar/ocultar vistas según vistaAgrupada en `cargarDispositivos()`
+- [x] Estilos: colores primarios, hover effects, tema claro/oscuro
+
+**Testing en VM:** ✅
+- Toggle vista lista ↔ vista agrupada funciona
+- Filtros respetados en ambas vistas
+- Responsive en móvil/tablet/desktop
+
+---
+
+### Tarea 3: Historial de escaneos con gráfico ✅
+
+**Backend (app/rutas/escaneos.py):**
+- [x] Nuevo endpoint `GET /api/escaneos/estadisticas/por-fecha?dias=N`
+- [x] Query SQL con GROUP BY DATE(), calcula:
+  - Cantidad de escaneos por día
+  - Promedio de dispositivos encontrados
+  - Máximo de nuevos dispositivos
+  - Duración promedio en segundos
+- [x] Período configurable (7, 30, 90, 180 días)
+
+**Frontend (static/index.html):**
+- [x] Nuevo tab "Historial escaneos" (junto a Dispositivos, Presencia)
+- [x] Panel con selector de período (dropdown + botón Cargar)
+- [x] Gráfico SVG vanilla:
+  - Barras: duración promedio (gris)
+  - Línea: promedio encontrados (azul/primary)
+  - Puntos interactivos con tooltips
+  - Ejes escalados automáticamente
+  - Responsive (viewBox)
+- [x] Tabla de datos debajo: resumen diario con todos los valores
+- [x] Carga automática al cambiar período
+
+**Testing en VM:** ✅
+- Click en tab "Historial escaneos" carga datos
+- Gráfico se dibuja correctamente
+- Cambio de período actualiza automáticamente
+- Tabla muestra datos precisos
+
+---
+
 ## 2026-04-01/02 — Gestión de tipos de dispositivos (Opción A: SQLite) ✅
 
 ### ✅ COMPLETADO

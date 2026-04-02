@@ -54,8 +54,8 @@ Desplegado en VM 101 y funcionando.
 ### Fase 5 — Configuración y mejoras pendientes
 
 - [x] Gestión de tipos de dispositivos (SQLite CRUD) — tabla tipos_dispositivo, API /api/tipos, frontend dinámico (2026-04-01 a 2026-04-02)
-- [ ] Pantalla de configuración en ReDo (red, intervalo, presencia días, NTFY)
-- [ ] Vista agrupada por zona (dispositivos agrupados en vez de lista plana)
+- [x] Exportar listado de dispositivos — endpoints /api/dispositivos/exportar/{csv,json}, botón dropdown en toolbar (2026-04-02)
+- [x] Vista agrupada por zona — dispositivos agrupados en tarjetas, toggle vista lista/agrupada (2026-04-02)
+- [x] Historial de escaneos con gráfico temporal — endpoint /api/escaneos/estadisticas/por-fecha, gráfico SVG (2026-04-02)
 - [x] Auto-detección de tipo por fabricante — 60+ reglas, campo tipo_auto, indicador en modal (2026-03-26)
-- [ ] Historial de escaneos con gráfico temporal
-- [ ] Exportar listado de dispositivos
+- [ ] Pantalla de configuración en ReDo (red, intervalo, presencia días, NTFY) — post-Fase 5
