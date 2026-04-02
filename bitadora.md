@@ -4,7 +4,7 @@ Registro detallado del trabajo día a día.
 
 ---
 
-## 2026-04-02 — Fase 5: 3 tareas completadas ✅
+## 2026-04-02 — Fase 5: 3 tareas completadas + 3 fixes ✅
 
 ### Tarea 1: Exportar CSV/JSON ✅
 
@@ -81,6 +81,124 @@ curl "http://192.168.31.131/red/api/dispositivos/exportar/csv?tipo=iot" > dispos
 - Gráfico se dibuja correctamente
 - Cambio de período actualiza automáticamente
 - Tabla muestra datos precisos
+
+---
+
+## 2026-04-02 (tarde) — Fixes de las 3 tareas ✅
+
+### Fix 1: Descarga CSV/JSON no funcionaba ❌ → ✅
+
+**Problema:** Campo `nombre` no existe en tabla `dispositivos`
+**Error:** `sqlite3.OperationalError: no such column: nombre`
+
+**Solución:**
+- Campo correcto es `notas` (nombre personalizado del usuario)
+- Incluir también `hostname` (nombre de equipo en LAN)
+- Formato en CSV: `notas · hostname`
+- Manejar valores NULL con `or ""`
+
+**Archivos modificados:**
+- `app/rutas/dispositivos.py` líneas 140-190 (endpoint `/api/dispositivos/exportar/csv`)
+  - SELECT: cambiar `nombre` por `notas`
+  - writerow: usar `d["notas"]` en lugar de `d["nombre"]`
+  - Null-check: `d["ip"] or ""`
+
+**Testing:** ✅
+```bash
+curl "http://192.168.31.131/red/api/dispositivos/exportar/csv" > dispositivos.csv
+# CSV debe tener columnas: id,mac,ip,nombre,hostname,tipo,zona,confiable
+```
+
+---
+
+### Fix 2: No vuelve a vista lista ❌ → ✅
+
+**Problema:** Toggle "Vista: Lista ↔ Agrupada" no funcionaba
+- Hacer click en toggle no volvía a lista (quedaba en agrupada)
+- Botón no respondía bien
+
+**Causa:** `renderizarAgrupado()` escribía en contenedor equivocado
+- Línea 1487 (antes): `document.getElementById('panelDispositivos').innerHTML = html`
+- `panelDispositivos` es el padre de `vistaLista` y `vistaAgrupada`
+- Esto sobrescribía ambas vistas
+
+**Solución:**
+- Cambiar a: `document.getElementById('vistaAgrupada').innerHTML = html`
+- Ahora `cargarDispositivos()` puede mostrar/ocultar correctamente:
+  - Línea 1212: `document.getElementById('vistaLista').style.display = vistaAgrupada ? 'none' : 'block'`
+  - Línea 1213: `document.getElementById('vistaAgrupada').style.display = vistaAgrupada ? 'block' : 'none'`
+
+**Archivos modificados:**
+- `static/index.html` línea ~1487
+
+**Testing:** ✅
+- Click en "Vista: Lista" → tabla visible
+- Click en "Vista: Agrupada" → tarjetas visibles
+- Click en "Vista: Lista" → tabla visible nuevamente
+
+---
+
+### Fix 3: Vista agrupada cambio de plana a jerárquica ❌ → ✅
+
+**Antes:** Agrupado solo por zona (estructura plana)
+```
+📍 Salón (5)
+  - iPhone (teléfono)
+  - MacBook (portátil)
+  - Monitor (tv)
+  - Shelly (iot)
+  - ...
+```
+
+**Ahora:** Agrupado por tipo → zona (estructura jerárquica)
+```
+📱 Teléfono (4)
+  📍 Salón (2)
+    - iPhone Luis
+    - Samsung María
+  📍 Despacho (2)
+    - Xiaomi Luis
+    - Motorola María
+
+💻 Portátil (3)
+  📍 Despacho (3)
+    - MacBook Luis
+    - XPS María
+    - Lenovo Antonio
+
+🔌 Iot (6)
+  📍 Salón (2)
+    - Shelly Plus 1
+    - Bombilla IKEA
+  📍 Cocina (2)
+    - Enchufe TP-Link
+    - Sensor movimiento
+  ...
+```
+
+**Implementación:**
+- Crear estructura anidada: `gruposPorTipo[tipo][zona] = []`
+- Iterar tipos (sorted alfabético)
+- Dentro de cada tipo, iterar zonas (sorted)
+- Mostrar icono y contador por tipo
+- Mostrar contador por zona
+
+**CSS new:**
+- `.tipo-grupo` - contenedor de tipo (border-bottom 3px)
+- `.tipo-titulo` - título del tipo (18px, bold, primary)
+- `.zona-grupo` - indentación visual (margin-left)
+- `.zona-titulo` - título de zona (15px, on-surface-variant)
+
+**Archivos modificados:**
+- `static/index.html` líneas ~1443-1487 (función renderizarAgrupado)
+- `static/index.html` líneas ~330-365 (CSS nuevos)
+
+**Testing:** ✅
+- Click en "Vista: Agrupada"
+- Verificar que se ve estructura tipo → zona
+- Contador de dispositivos por tipo y zona es correcto
+- Iconos Material Symbols visibles
+- Ordenamiento alfabético (tipos y zonas)
 
 ---
 
