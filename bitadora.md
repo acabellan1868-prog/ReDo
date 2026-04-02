@@ -33,11 +33,16 @@ Registro detallado del trabajo día a día.
 - [x] Actualiza `TIPOS_ICONO` dinámicamente para que iconos en tabla usen datos de API
 - [x] Integrada en inicialización (`cargarTipos()` se ejecuta al cargar página)
 
-### 📋 Tareas pendientes
+### ✅ Testing en VM (2026-04-02)
 
-1. **Testing**: Verificar flujo completo (crear, editar, eliminar tipos) en VM
-2. **Documentación**: Actualizar CLAUDE.md con API `/api/tipos`
-3. **Despliegue**: Hacer push a VM y testear
+- [x] API `/api/tipos` devuelve 11 tipos correctamente
+- [x] API `/api/resumen` devuelve desglose por tipo
+- [x] Frontend carga tipos dinámicamente en dropdown "Tipo: Todos"
+- [x] Modal de edición carga tipos dinámicamente
+- [x] Iconos en tabla se muestran correctamente
+- [x] Filtro por tipo funciona (ej: seleccionar "IoT" muestra solo IoT)
+
+**Resultado: FUNCIONAL AL 100%**
 
 ---
 
