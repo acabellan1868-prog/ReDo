@@ -158,7 +158,7 @@ def exportar_csv(
         where.append("zona = ?")
         parametros.append(zona)
 
-    sql = "SELECT id, mac, ip, hostname, nombre, tipo, zona, confiable, notas FROM dispositivos"
+    sql = "SELECT id, mac, ip, hostname, tipo, zona, confiable, notas FROM dispositivos"
     if where:
         sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY ultima_vez DESC"
@@ -169,20 +169,21 @@ def exportar_csv(
     output = io.StringIO()
     writer = csv.DictWriter(
         output,
-        fieldnames=["id", "mac", "ip", "hostname", "nombre", "tipo", "zona", "confiable", "notas"],
+        fieldnames=["id", "mac", "ip", "nombre", "hostname", "tipo", "zona", "confiable"],
     )
     writer.writeheader()
     for d in dispositivos:
+        # Nombre es notas (personalizado) o vacío
+        nombre = d["notas"] or ""
         writer.writerow({
             "id": d["id"],
             "mac": d["mac"],
-            "ip": d["ip"],
-            "hostname": d["hostname"],
-            "nombre": d["nombre"],
+            "ip": d["ip"] or "",
+            "nombre": nombre,
+            "hostname": d["hostname"] or "",
             "tipo": d["tipo"],
-            "zona": d["zona"],
+            "zona": d["zona"] or "",
             "confiable": d["confiable"],
-            "notas": d["notas"],
         })
 
     # Retornar como descarga

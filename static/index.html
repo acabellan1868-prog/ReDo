@@ -127,18 +127,37 @@
             background: var(--surface-container-high);
         }
 
-        /* Vista agrupada por zona */
+        /* Vista agrupada por tipo → zona */
+        .tipo-grupo {
+            margin-bottom: var(--gap-xl);
+            padding-bottom: var(--gap-lg);
+            border-bottom: 3px solid var(--surface-container);
+        }
+
+        .tipo-grupo:last-child {
+            border-bottom: none;
+        }
+
+        .tipo-titulo {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin: var(--gap-md) 0 var(--gap-lg) 0;
+            text-transform: capitalize;
+        }
+
         .zona-grupo {
-            margin: var(--gap-lg) 0;
+            margin: var(--gap-md) 0 var(--gap-lg) 0;
+            margin-left: var(--gap-md);
         }
 
         .zona-titulo {
             font-weight: 700;
-            font-size: 1rem;
-            color: var(--primary);
+            font-size: 0.95rem;
+            color: var(--on-surface-variant);
             margin: var(--gap-md) 0;
             padding-bottom: var(--gap-sm);
-            border-bottom: 2px solid var(--surface-container-high);
+            border-bottom: 1px solid var(--surface-container-high);
         }
 
         .zona-dispositivos {
@@ -1441,50 +1460,67 @@
         });
 
         function renderizarAgrupado(dispositivos) {
-            // Agrupar por zona con Array.reduce()
-            var grupos = dispositivos.reduce(function(acc, d) {
+            // Agrupar por tipo, luego por zona (estructura jerárquica)
+            var gruposPorTipo = dispositivos.reduce(function(acc, d) {
+                var tipo = d.tipo || 'otro';
+                if (!acc[tipo]) acc[tipo] = {};
+
                 var zona = d.zona || 'Sin zona';
-                if (!acc[zona]) acc[zona] = [];
-                acc[zona].push(d);
+                if (!acc[tipo][zona]) acc[tipo][zona] = [];
+                acc[tipo][zona].push(d);
                 return acc;
             }, {});
 
-            // Renderizar cada zona
+            // Renderizar agrupado por tipo → zona
             var html = '';
-            Object.keys(grupos).sort().forEach(function(zona) {
-                var dispositivosZona = grupos[zona];
-                html += '<div class="zona-grupo">' +
-                    '<h3 class="zona-titulo">📍 ' + zona + ' (' + dispositivosZona.length + ')</h3>' +
-                    '<div class="zona-dispositivos">';
+            Object.keys(gruposPorTipo).sort().forEach(function(tipo) {
+                var iconoTipo = TIPOS_ICONO[tipo] || 'device_unknown';
+                var zonas = gruposPorTipo[tipo];
+                var totalPorTipo = Object.values(zonas).reduce(function(sum, arr) { return sum + arr.length; }, 0);
 
-                html += dispositivosZona.map(function(d) {
-                    var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
-                    var nombre = d.notas || 'Sin nombre';
-                    var esConfiable = d.confiable === 1;
-                    var badge = esConfiable ? '<span class="dispositivo-tarjeta__estado" style="background:var(--exito-fondo);color:var(--exito)">✓ Confiable</span>' : '<span class="dispositivo-tarjeta__estado" style="background:var(--peligro-fondo);color:var(--peligro)">? Desconocido</span>';
+                html += '<div class="tipo-grupo">' +
+                    '<h2 class="tipo-titulo">' +
+                    '<span class="material-symbols-outlined" style="vertical-align:middle;margin-right:0.5rem">' + iconoTipo + '</span>' +
+                    tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' (' + totalPorTipo + ')</h2>';
 
-                    return '<div class="dispositivo-tarjeta">' +
-                        '<div class="dispositivo-tarjeta__tipo">' +
-                            '<span class="material-symbols-outlined" title="' + d.tipo + '">' + icono + '</span>' +
-                        '</div>' +
-                        '<div class="dispositivo-tarjeta__nombre">' + nombre + '</div>' +
-                        '<div class="dispositivo-tarjeta__mac">' + d.mac + '</div>' +
-                        '<div class="dispositivo-tarjeta__info">' +
-                            '<strong>IP:</strong> ' + (d.ip || '?') + '<br>' +
-                            (d.hostname ? '<strong>Host:</strong> ' + d.hostname : '') +
-                        '</div>' +
-                        badge +
-                        '<div class="dispositivo-tarjeta__acciones">' +
-                            '<button class="dispositivo-tarjeta__btn" onclick="abrirModal(' + d.id + ')" title="Editar">✏️ Editar</button>' +
-                            '<button class="dispositivo-tarjeta__btn" onclick="verPresencia(' + d.id + ')" title="Presencia">📅 Presencia</button>' +
-                        '</div>' +
-                    '</div>';
-                }).join('');
+                // Renderizar zonas dentro de cada tipo
+                Object.keys(zonas).sort().forEach(function(zona) {
+                    var dispositivosZona = zonas[zona];
+                    html += '<div class="zona-grupo">' +
+                        '<h3 class="zona-titulo">📍 ' + zona + ' (' + dispositivosZona.length + ')</h3>' +
+                        '<div class="zona-dispositivos">';
 
-                html += '</div></div>';
+                    html += dispositivosZona.map(function(d) {
+                        var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
+                        var nombre = d.notas || 'Sin nombre';
+                        var esConfiable = d.confiable === 1;
+                        var badge = esConfiable ? '<span class="dispositivo-tarjeta__estado" style="background:var(--exito-fondo);color:var(--exito)">✓ Confiable</span>' : '<span class="dispositivo-tarjeta__estado" style="background:var(--peligro-fondo);color:var(--peligro)">? Desconocido</span>';
+
+                        return '<div class="dispositivo-tarjeta">' +
+                            '<div class="dispositivo-tarjeta__tipo">' +
+                                '<span class="material-symbols-outlined" title="' + d.tipo + '">' + icono + '</span>' +
+                            '</div>' +
+                            '<div class="dispositivo-tarjeta__nombre">' + nombre + '</div>' +
+                            '<div class="dispositivo-tarjeta__mac">' + d.mac + '</div>' +
+                            '<div class="dispositivo-tarjeta__info">' +
+                                '<strong>IP:</strong> ' + (d.ip || '?') + '<br>' +
+                                (d.hostname ? '<strong>Host:</strong> ' + d.hostname : '') +
+                            '</div>' +
+                            badge +
+                            '<div class="dispositivo-tarjeta__acciones">' +
+                                '<button class="dispositivo-tarjeta__btn" onclick="abrirModal(' + d.id + ')" title="Editar">✏️ Editar</button>' +
+                                '<button class="dispositivo-tarjeta__btn" onclick="verPresencia(' + d.id + ')" title="Presencia">📅 Presencia</button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+
+                    html += '</div></div>';
+                });
+
+                html += '</div>';
             });
 
-            document.getElementById('panelDispositivos').innerHTML = html;
+            document.getElementById('vistaAgrupada').innerHTML = html;
         }
 
         /* ============================================================
