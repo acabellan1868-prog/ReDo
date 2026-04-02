@@ -127,6 +127,99 @@
             background: var(--surface-container-high);
         }
 
+        /* Vista agrupada por zona */
+        .zona-grupo {
+            margin: var(--gap-lg) 0;
+        }
+
+        .zona-titulo {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary);
+            margin: var(--gap-md) 0;
+            padding-bottom: var(--gap-sm);
+            border-bottom: 2px solid var(--surface-container-high);
+        }
+
+        .zona-dispositivos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--gap-md);
+        }
+
+        .dispositivo-tarjeta {
+            background: var(--surface-container-lowest);
+            border: 1px solid var(--surface-container-high);
+            border-radius: var(--radio-lg);
+            padding: var(--gap-md);
+            box-shadow: var(--sombra-sm);
+            transition: box-shadow var(--transicion), border var(--transicion);
+            cursor: pointer;
+        }
+
+        .dispositivo-tarjeta:hover {
+            box-shadow: var(--sombra-md);
+            border-color: var(--primary);
+        }
+
+        .dispositivo-tarjeta__tipo {
+            font-size: 2rem;
+            margin-bottom: var(--gap-sm);
+            color: var(--primary);
+        }
+
+        .dispositivo-tarjeta__nombre {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--on-surface);
+            margin-bottom: var(--gap-xs);
+            word-break: break-word;
+        }
+
+        .dispositivo-tarjeta__mac {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--gap-sm);
+        }
+
+        .dispositivo-tarjeta__info {
+            font-size: 0.78rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--gap-sm);
+        }
+
+        .dispositivo-tarjeta__estado {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: var(--radio-full);
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: var(--gap-sm);
+        }
+
+        .dispositivo-tarjeta__acciones {
+            display: flex;
+            gap: var(--gap-xs);
+            margin-top: var(--gap-sm);
+        }
+
+        .dispositivo-tarjeta__btn {
+            flex: 1;
+            padding: 0.3rem 0.5rem;
+            border: none;
+            border-radius: var(--radio-full);
+            font-size: 0.65rem;
+            cursor: pointer;
+            background: var(--surface-container);
+            color: var(--on-surface-variant);
+            transition: opacity var(--transicion);
+        }
+
+        .dispositivo-tarjeta__btn:hover {
+            opacity: 0.8;
+        }
+
         /* Selectores de tipo y zona */
         .redo-filtro-select {
             padding: 0.4rem 0.7rem;
@@ -817,10 +910,14 @@
                     <a href="#" class="redo-dropdown-item" id="descargarCSV">📄 CSV</a>
                     <a href="#" class="redo-dropdown-item" id="descargarJSON">📋 JSON</a>
                 </div>
+                <button class="hogar-boton" id="btnToggleVista" title="Cambiar vista">
+                    <span class="material-symbols-outlined" style="font-size:1rem">view_list</span>
+                    Vista: Lista
+                </button>
             </div>
 
-            <!-- Tabla -->
-            <div class="hogar-tabla-wrap">
+            <!-- Tabla (vista lista) -->
+            <div class="hogar-tabla-wrap" id="vistaLista">
                 <table class="hogar-tabla">
                     <thead>
                         <tr>
@@ -838,6 +935,9 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Vista agrupada por zona -->
+            <div id="vistaAgrupada" style="display: none; padding: var(--gap-lg) 0;"></div>
         </div>
 
         <!-- ======== PANEL: PRESENCIA ======== -->
@@ -931,6 +1031,7 @@
         var filtroConfiable = 'todos';
         var filtroTipo = '';
         var filtroZona = '';
+        var vistaAgrupada = false;
 
         /* ============================================================
            Pestanas Dispositivos / Presencia
@@ -1034,51 +1135,63 @@
             fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(lista) {
-                    var tbody = document.getElementById('tablaDispositivos');
+                    // Mostrar/ocultar vistas según vistaAgrupada
+                    document.getElementById('vistaLista').style.display = vistaAgrupada ? 'none' : 'block';
+                    document.getElementById('vistaAgrupada').style.display = vistaAgrupada ? 'block' : 'none';
 
                     if (lista.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" class="sin-datos">No hay dispositivos</td></tr>';
+                        var contenedor = vistaAgrupada
+                            ? document.getElementById('vistaAgrupada')
+                            : document.getElementById('tablaDispositivos');
+                        contenedor.innerHTML = '<div class="sin-datos">No hay dispositivos</div>';
                         return;
                     }
 
-                    tbody.innerHTML = lista.map(function(d) {
-                        var esConfiable = d.confiable === 1;
-                        var nombre = d.notas || '';
-                        var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
+                    if (vistaAgrupada) {
+                        // Renderizar vista agrupada
+                        renderizarAgrupado(lista);
+                    } else {
+                        // Renderizar vista lista (tabla)
+                        var tbody = document.getElementById('tablaDispositivos');
+                        tbody.innerHTML = lista.map(function(d) {
+                            var esConfiable = d.confiable === 1;
+                            var nombre = d.notas || '';
+                            var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
 
-                        var info = '';
-                        if (nombre) info += '<strong class="nombre-disp">' + nombre + '</strong><br>';
-                        info += '<span class="hostname">' + d.mac + '</span>';
-                        if (d.fabricante) info += '<br><span class="hostname">' + d.fabricante + '</span>';
-                        if (d.hostname) info += ' · <span class="hostname">' + d.hostname + '</span>';
+                            var info = '';
+                            if (nombre) info += '<strong class="nombre-disp">' + nombre + '</strong><br>';
+                            info += '<span class="hostname">' + d.mac + '</span>';
+                            if (d.fabricante) info += '<br><span class="hostname">' + d.fabricante + '</span>';
+                            if (d.hostname) info += ' · <span class="hostname">' + d.hostname + '</span>';
 
-                        var zonaHtml = d.zona
-                            ? '<span class="zona-badge">' + d.zona + '</span>'
-                            : '<span class="hostname">—</span>';
+                            var zonaHtml = d.zona
+                                ? '<span class="zona-badge">' + d.zona + '</span>'
+                                : '<span class="hostname">—</span>';
 
-                        return '<tr data-id="' + d.id + '" data-mac="' + d.mac + '" data-nombre="' + (nombre).replace(/"/g, '&quot;') + '" data-tipo="' + d.tipo + '">' +
-                            '<td data-label="Tipo"><span class="material-symbols-outlined icono-tipo" title="' + d.tipo + '">' + icono + '</span></td>' +
-                            '<td data-label="IP"><strong>' + (d.ip || '?') + '</strong></td>' +
-                            '<td data-label="Dispositivo">' + info + '</td>' +
-                            '<td data-label="Zona">' + zonaHtml + '</td>' +
-                            '<td data-label="Estado"><span class="hogar-badge ' +
-                                (esConfiable ? 'hogar-badge--exito' : 'hogar-badge--peligro') + '">' +
-                                (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
-                            '<td data-label="Visto" class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
-                            '<td>' +
-                                '<button class="btn-accion btn-accion--nombre" onclick="abrirModal(' + d.id + ')" title="Editar">' +
-                                    '<span class="material-symbols-outlined" style="font-size:0.9rem">edit</span>' +
-                                '</button> ' +
-                                '<button class="btn-accion btn-accion--presencia" onclick="verPresencia(' + d.id + ')" title="Presencia">' +
-                                    '<span class="material-symbols-outlined" style="font-size:0.9rem">timeline</span>' +
-                                '</button> ' +
-                                (esConfiable
-                                    ? '<button class="btn-accion btn-accion--desconocido" onclick="cambiarEstado(' + d.id + ', 0)">Desconocido</button>'
-                                    : '<button class="btn-accion btn-accion--confiable" onclick="cambiarEstado(' + d.id + ', 1)">Confiable</button>'
-                                ) +
-                            '</td>' +
-                        '</tr>';
-                    }).join('');
+                            return '<tr data-id="' + d.id + '" data-mac="' + d.mac + '" data-nombre="' + (nombre).replace(/"/g, '&quot;') + '" data-tipo="' + d.tipo + '">' +
+                                '<td data-label="Tipo"><span class="material-symbols-outlined icono-tipo" title="' + d.tipo + '">' + icono + '</span></td>' +
+                                '<td data-label="IP"><strong>' + (d.ip || '?') + '</strong></td>' +
+                                '<td data-label="Dispositivo">' + info + '</td>' +
+                                '<td data-label="Zona">' + zonaHtml + '</td>' +
+                                '<td data-label="Estado"><span class="hogar-badge ' +
+                                    (esConfiable ? 'hogar-badge--exito' : 'hogar-badge--peligro') + '">' +
+                                    (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
+                                '<td data-label="Visto" class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
+                                '<td>' +
+                                    '<button class="btn-accion btn-accion--nombre" onclick="abrirModal(' + d.id + ')" title="Editar">' +
+                                        '<span class="material-symbols-outlined" style="font-size:0.9rem">edit</span>' +
+                                    '</button> ' +
+                                    '<button class="btn-accion btn-accion--presencia" onclick="verPresencia(' + d.id + ')" title="Presencia">' +
+                                        '<span class="material-symbols-outlined" style="font-size:0.9rem">timeline</span>' +
+                                    '</button> ' +
+                                    (esConfiable
+                                        ? '<button class="btn-accion btn-accion--desconocido" onclick="cambiarEstado(' + d.id + ', 0)">Desconocido</button>'
+                                        : '<button class="btn-accion btn-accion--confiable" onclick="cambiarEstado(' + d.id + ', 1)">Confiable</button>'
+                                    ) +
+                                '</td>' +
+                            '</tr>';
+                        }).join('');
+                    }
                 });
         }
 
@@ -1241,6 +1354,65 @@
             window.location.href = BASE + '/api/dispositivos/exportar/json' + querystring;
             document.getElementById('dropdownDescargar').style.display = 'none';
         });
+
+        /* ============================================================
+           Vista agrupada por zona
+           ============================================================ */
+        document.getElementById('btnToggleVista').addEventListener('click', function() {
+            vistaAgrupada = !vistaAgrupada;
+            this.textContent = vistaAgrupada ? '📊 Vista: Agrupada' : '📋 Vista: Lista';
+            this.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">' +
+                (vistaAgrupada ? 'dashboard' : 'view_list') + '</span> ' +
+                (vistaAgrupada ? 'Vista: Agrupada' : 'Vista: Lista');
+            cargarDispositivos();
+        });
+
+        function renderizarAgrupado(dispositivos) {
+            // Agrupar por zona con Array.reduce()
+            var grupos = dispositivos.reduce(function(acc, d) {
+                var zona = d.zona || 'Sin zona';
+                if (!acc[zona]) acc[zona] = [];
+                acc[zona].push(d);
+                return acc;
+            }, {});
+
+            // Renderizar cada zona
+            var html = '';
+            Object.keys(grupos).sort().forEach(function(zona) {
+                var dispositivosZona = grupos[zona];
+                html += '<div class="zona-grupo">' +
+                    '<h3 class="zona-titulo">📍 ' + zona + ' (' + dispositivosZona.length + ')</h3>' +
+                    '<div class="zona-dispositivos">';
+
+                html += dispositivosZona.map(function(d) {
+                    var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
+                    var nombre = d.notas || 'Sin nombre';
+                    var esConfiable = d.confiable === 1;
+                    var badge = esConfiable ? '<span class="dispositivo-tarjeta__estado" style="background:var(--exito-fondo);color:var(--exito)">✓ Confiable</span>' : '<span class="dispositivo-tarjeta__estado" style="background:var(--peligro-fondo);color:var(--peligro)">? Desconocido</span>';
+
+                    return '<div class="dispositivo-tarjeta">' +
+                        '<div class="dispositivo-tarjeta__tipo">' +
+                            '<span class="material-symbols-outlined" title="' + d.tipo + '">' + icono + '</span>' +
+                        '</div>' +
+                        '<div class="dispositivo-tarjeta__nombre">' + nombre + '</div>' +
+                        '<div class="dispositivo-tarjeta__mac">' + d.mac + '</div>' +
+                        '<div class="dispositivo-tarjeta__info">' +
+                            '<strong>IP:</strong> ' + (d.ip || '?') + '<br>' +
+                            (d.hostname ? '<strong>Host:</strong> ' + d.hostname : '') +
+                        '</div>' +
+                        badge +
+                        '<div class="dispositivo-tarjeta__acciones">' +
+                            '<button class="dispositivo-tarjeta__btn" onclick="abrirModal(' + d.id + ')" title="Editar">✏️ Editar</button>' +
+                            '<button class="dispositivo-tarjeta__btn" onclick="verPresencia(' + d.id + ')" title="Presencia">📅 Presencia</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+                html += '</div></div>';
+            });
+
+            document.getElementById('panelDispositivos').innerHTML = html;
+        }
 
         /* ============================================================
            Filtros de confiabilidad
