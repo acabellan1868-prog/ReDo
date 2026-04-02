@@ -671,94 +671,143 @@
             color: var(--on-surface);
         }
 
-        /* ── Formulario de configuración ── */
-        .config-item {
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-md);
-            padding: var(--gap-sm) var(--gap-md);
-            margin-bottom: var(--gap-sm);
-            border-left: 3px solid var(--primary);
-            display: grid;
-            grid-template-columns: 200px 1fr auto;
-            gap: var(--gap-md);
+        /* ── Modal de configuración ── */
+        .config-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .config-modal {
+            background: var(--surface);
+            border-radius: var(--radio-xl);
+            box-shadow: var(--sombra-lg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .config-modal__header {
+            padding: var(--gap-lg);
+            border-bottom: 1px solid var(--surface-container);
+            display: flex;
+            justify-content: space-between;
             align-items: center;
         }
 
-        .config-item__titulo {
+        .config-modal__titulo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--on-surface);
+            margin: 0;
+        }
+
+        .config-modal__cerrar {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--on-surface-variant);
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radio-full);
+            transition: background var(--transicion);
+        }
+
+        .config-modal__cerrar:hover {
+            background: var(--surface-container);
+        }
+
+        .config-modal__body {
+            padding: var(--gap-lg);
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .config-campo {
+            margin-bottom: var(--gap-lg);
+        }
+
+        .config-campo:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal__label {
+            display: block;
             font-weight: 600;
             color: var(--on-surface);
-            font-size: 0.85rem;
-            line-height: 1.2;
+            font-size: 0.9rem;
+            margin-bottom: var(--gap-sm);
         }
 
-        .config-item__descripcion {
-            font-size: 0.7rem;
+        .modal__help {
+            display: block;
+            font-size: 0.8rem;
             color: var(--on-surface-variant);
-            line-height: 1.1;
+            margin-top: 0.25rem;
         }
 
-        .config-item__control {
-            display: flex;
-            gap: var(--gap-sm);
-            align-items: center;
-        }
-
-        .config-item input,
-        .config-item select {
-            flex: 1;
-            padding: 0.35rem 0.5rem;
+        .config-campo input,
+        .config-campo select {
+            width: 100%;
+            padding: 0.75rem;
             border: 1px solid var(--outline);
-            border-radius: var(--radio-sm);
-            background: var(--surface);
+            border-radius: var(--radio-md);
+            background: var(--surface-container-lowest);
             color: var(--on-surface);
             font-family: var(--fuente-body);
-            font-size: 0.85rem;
+            font-size: 0.95rem;
+            box-sizing: border-box;
         }
 
-        .config-item input:focus,
-        .config-item select:focus {
+        .config-campo input:focus,
+        .config-campo select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px var(--primary-container);
+            box-shadow: 0 0 0 3px var(--primary-container);
         }
 
-        .config-item__btn {
-            padding: 0.35rem 1rem;
-            background: var(--primary);
-            color: var(--on-primary);
-            border: none;
-            border-radius: var(--radio-sm);
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: background var(--transicion);
-            white-space: nowrap;
-        }
-
-        .config-item__btn:hover {
-            background: var(--primary-dim);
-        }
-
-        .config-item__btn:disabled {
-            background: var(--surface-container);
-            color: var(--on-surface-variant);
-            cursor: not-allowed;
-        }
-
-        .config-mensaje {
-            grid-column: 1 / -1;
-            margin-top: -8px;
-            padding-left: 200px;
-        }
-
-        .config-item__error {
+        .config-error {
             color: var(--peligro);
-            font-size: 0.75rem;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
         }
 
-        .config-item__exito {
-            color: var(--exito);
-            font-size: 0.75rem;
+        .config-modal__footer {
+            padding: var(--gap-lg);
+            border-top: 1px solid var(--surface-container);
+            display: flex;
+            gap: var(--gap-md);
+            justify-content: flex-end;
+        }
+
+        .config-modal__footer .hogar-boton {
+            min-width: 120px;
         }
 
         /* ── Modal de edicion ── */
@@ -1141,10 +1190,29 @@
         <!-- ======== PANEL: CONFIGURACION ======== -->
         <div class="redo-panel" id="panelConfig">
             <p style="margin-bottom: var(--gap-lg); color: var(--on-surface-variant);">
-                ⚙️ Parámetros de configuración del sistema. Los cambios se aplican inmediatamente.
+                ⚙️ Parámetros de configuración del sistema.
             </p>
-            <div id="configFormContainer">
-                <div class="sin-datos">Cargando configuración...</div>
+            <button class="hogar-boton hogar-boton--primario" id="btnAbrirConfigModal" style="margin-bottom: var(--gap-lg);">
+                <span class="material-symbols-outlined" style="font-size:1rem">edit</span>
+                Editar configuración
+            </button>
+            <div id="configResumen" style="color: var(--on-surface-variant); font-size: 0.9rem; line-height: 1.6;"></div>
+        </div>
+
+        <!-- ======== MODAL: CONFIGURACION ======== -->
+        <div class="config-modal-overlay" id="configModalOverlay" style="display: none;">
+            <div class="config-modal">
+                <div class="config-modal__header">
+                    <h2 class="config-modal__titulo">⚙️ Configuración del sistema</h2>
+                    <button class="config-modal__cerrar" id="btnCerrarConfigModal">✕</button>
+                </div>
+                <div class="config-modal__body" id="configModalBody">
+                    <div class="sin-datos">Cargando configuración...</div>
+                </div>
+                <div class="config-modal__footer">
+                    <button class="hogar-boton" id="btnCancelarConfigModal">CANCELAR</button>
+                    <button class="hogar-boton hogar-boton--primario" id="btnGuardarConfigModal">GUARDAR</button>
+                </div>
             </div>
         </div>
 
@@ -1246,7 +1314,9 @@
 
                 if (destino === 'presencia') cargarTimeline();
                 if (destino === 'historial') cargarHistorial();
-                if (destino === 'config') cargarConfiguracion();
+                if (destino === 'config') {
+                    cargarConfiguracion();
+                }
             });
         });
 
@@ -1982,98 +2052,148 @@
         document.getElementById('filtroHistorialDias').addEventListener('change', cargarHistorial);
 
         /* ============================================================
-           Configuracion
+           Configuracion (Modal)
            ============================================================ */
+        var configActual = {}; // Almacenar configuración actual
+
         function cargarConfiguracion() {
-            var container = document.getElementById('configFormContainer');
-            container.innerHTML = '<div class="sin-datos">Cargando configuración...</div>';
-
             fetch(BASE + '/api/config')
-                .then(function(r) {
-                    if (!r.ok) throw new Error('Error al cargar configuración');
-                    return r.json();
-                })
+                .then(function(r) { return r.json(); })
                 .then(function(datos) {
-                    if (!datos || datos.length === 0) {
-                        container.innerHTML = '<div class="sin-datos">Sin parámetros de configuración disponibles</div>';
-                        return;
-                    }
+                    // Guardar para comparación
+                    configActual = {};
+                    datos.forEach(function(c) { configActual[c.clave] = c; });
 
+                    // Mostrar resumen en el panel
+                    var html = '';
+                    datos.forEach(function(config) {
+                        html += '<div style="margin-bottom: var(--gap-md);">' +
+                            '<strong>' + config.clave.replace(/_/g, ' ').toUpperCase() + ':</strong><br>' +
+                            '<code style="color: var(--primary); font-size: 0.85rem;">' + (config.valor || '-') + '</code>' +
+                        '</div>';
+                    });
+                    document.getElementById('configResumen').innerHTML = html;
+                })
+                .catch(function(e) {
+                    console.error('Error cargando configuración:', e);
+                    document.getElementById('configResumen').innerHTML = '<div class="sin-datos">Error al cargar configuración</div>';
+                });
+        }
+
+        function abrirModalConfig() {
+            fetch(BASE + '/api/config')
+                .then(function(r) { return r.json(); })
+                .then(function(datos) {
                     var html = '';
                     datos.forEach(function(config) {
                         var inputType = config.tipo === 'int' ? 'number' : (config.tipo === 'float' ? 'number' : 'text');
                         var step = config.tipo === 'float' ? '0.1' : '';
-                        var titulo = config.clave.replace(/_/g, ' ').toUpperCase();
+                        var label = config.clave.replace(/_/g, ' ').toUpperCase();
 
-                        html += '<div class="config-item" data-clave="' + config.clave + '">' +
-                            '<div>' +
-                                '<div class="config-item__titulo">' + titulo + '</div>' +
-                                '<div class="config-item__descripcion">' + (config.descripcion || '') + '</div>' +
-                            '</div>' +
-                            '<div class="config-item__control">' +
-                                '<input type="' + inputType + '" value="' + (config.valor || '') + '" ' +
+                        html += '<div class="config-campo">' +
+                            '<label class="modal__label">' + label + '</label>' +
+                            '<input type="' + inputType + '" ' +
+                                'value="' + (config.valor || '') + '" ' +
+                                'data-clave="' + config.clave + '" ' +
+                                'data-tipo="' + config.tipo + '" ' +
                                 (step ? 'step="' + step + '" ' : '') +
-                                'class="config-input" data-clave="' + config.clave + '" data-tipo="' + config.tipo + '">' +
-                                '<button class="config-item__btn" onclick="actualizarConfig(\'' + config.clave + '\')">✓</button>' +
-                            '</div>' +
-                            '<div class="config-mensaje" data-clave="' + config.clave + '"></div>' +
+                                'class="config-input">' +
+                            '<span class="modal__help">' + (config.descripcion || '') + '</span>' +
+                            '<div class="config-error" data-clave="' + config.clave + '" style="display:none;"></div>' +
                         '</div>';
                     });
 
-                    container.innerHTML = html;
-
-                    // Event listeners para actualizar al presionar Enter
-                    document.querySelectorAll('.config-input').forEach(function(input) {
-                        input.addEventListener('keypress', function(e) {
-                            if (e.key === 'Enter') {
-                                actualizarConfig(this.getAttribute('data-clave'));
-                            }
-                        });
-                    });
+                    document.getElementById('configModalBody').innerHTML = html;
+                    document.getElementById('configModalOverlay').style.display = 'flex';
                 })
                 .catch(function(e) {
-                    console.error('Error cargando configuración:', e);
-                    container.innerHTML = '<div class="sin-datos">Error al cargar configuración</div>';
+                    console.error('Error abriendo modal:', e);
+                    alert('Error al cargar configuración');
                 });
         }
 
-        function actualizarConfig(clave) {
-            var input = document.querySelector('.config-input[data-clave="' + clave + '"]');
-            var valor = input.value;
-            var mensajeDiv = document.querySelector('.config-mensaje[data-clave="' + clave + '"]');
-            var btn = input.parentElement.querySelector('button');
+        function cerrarModalConfig() {
+            document.getElementById('configModalOverlay').style.display = 'none';
+        }
 
-            if (!valor || valor.trim() === '') {
-                mensajeDiv.innerHTML = '<div class="config-item__error">El valor no puede estar vacío</div>';
-                return;
-            }
+        function guardarConfiguracion() {
+            var inputs = document.querySelectorAll('.config-input');
+            var cambios = {}; // { clave: valor, ... }
+            var errores = {}; // { clave: 'error msg', ... }
+            var hayErrores = false;
 
+            // Validar y recopilar cambios
+            inputs.forEach(function(input) {
+                var clave = input.getAttribute('data-clave');
+                var valor = input.value.trim();
+                var errorDiv = document.querySelector('.config-error[data-clave="' + clave + '"]');
+
+                // Limpiar error anterior
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+
+                if (!valor) {
+                    errores[clave] = 'No puede estar vacío';
+                    errorDiv.textContent = errores[clave];
+                    errorDiv.style.display = 'block';
+                    hayErrores = true;
+                    return;
+                }
+
+                cambios[clave] = valor;
+            });
+
+            if (hayErrores) return;
+
+            // Guardar todos los cambios
+            var btn = document.getElementById('btnGuardarConfigModal');
             btn.disabled = true;
-            btn.textContent = 'Guardando...';
-            mensajeDiv.innerHTML = '';
+            btn.textContent = 'GUARDANDO...';
 
-            fetch(BASE + '/api/config/' + clave, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ valor: valor })
-            })
-                .then(function(r) {
-                    if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Error desconocido'); });
-                    return r.json();
-                })
-                .then(function(data) {
+            var promesas = [];
+            Object.keys(cambios).forEach(function(clave) {
+                promesas.push(
+                    fetch(BASE + '/api/config/' + clave, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ valor: cambios[clave] })
+                    })
+                        .then(function(r) {
+                            if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Error desconocido'); });
+                            return r.json();
+                        })
+                        .catch(function(e) {
+                            var errorDiv = document.querySelector('.config-error[data-clave="' + clave + '"]');
+                            errorDiv.textContent = e.message;
+                            errorDiv.style.display = 'block';
+                            hayErrores = true;
+                            throw e;
+                        })
+                );
+            });
+
+            Promise.all(promesas)
+                .then(function() {
                     btn.disabled = false;
-                    btn.textContent = 'Guardar';
-                    mensajeDiv.innerHTML = '<div class="config-item__exito">✓ Configuración actualizada correctamente</div>';
-                    setTimeout(function() { mensajeDiv.innerHTML = ''; }, 3000);
+                    btn.textContent = 'GUARDAR';
+                    cerrarModalConfig();
+                    cargarConfiguracion(); // Actualizar resumen
                 })
                 .catch(function(e) {
                     btn.disabled = false;
-                    btn.textContent = 'Guardar';
-                    console.error('Error actualizando config:', e);
-                    mensajeDiv.innerHTML = '<div class="config-item__error">✗ ' + e.message + '</div>';
+                    btn.textContent = 'GUARDAR';
+                    console.error('Error guardando configuración:', e);
                 });
         }
+
+        // Event listeners
+        document.getElementById('btnAbrirConfigModal').addEventListener('click', abrirModalConfig);
+        document.getElementById('btnCerrarConfigModal').addEventListener('click', cerrarModalConfig);
+        document.getElementById('btnCancelarConfigModal').addEventListener('click', cerrarModalConfig);
+        document.getElementById('btnGuardarConfigModal').addEventListener('click', guardarConfiguracion);
+        document.getElementById('configModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalConfig();
+        });
 
         function cerrarDetalle() {
             var panel = document.getElementById('detallePresencia');
