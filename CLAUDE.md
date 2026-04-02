@@ -67,7 +67,7 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/estado` | Resumen: total, confiables, desconocidos, último escaneo, `por_tipo` |
+| GET | `/api/resumen` | Resumen: total, confiables, desconocidos, último escaneo, `por_tipo` |
 | GET | `/api/dispositivos` | Lista dispositivos (filtros: `confiable`, `tipo`, `zona`) |
 | GET | `/api/dispositivos/zonas` | Lista de zonas en uso (para autocompletado) |
 | GET | `/api/tipos` | Catalogo de tipos de dispositivo (clave, nombre, icono) |
