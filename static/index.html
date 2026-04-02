@@ -91,6 +91,42 @@
             margin-left: auto;
         }
 
+        .redo-btn-descargar {
+            position: relative;
+        }
+
+        .redo-dropdown-descargar {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--surface-container);
+            border: 1px solid var(--surface-container-high);
+            border-radius: var(--radio-lg);
+            min-width: 120px;
+            box-shadow: var(--sombra-md);
+            z-index: 100;
+            margin-top: 0.5rem;
+        }
+
+        .redo-dropdown-item {
+            display: block;
+            padding: 0.6rem 1rem;
+            color: var(--on-surface);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--surface-container-high);
+            cursor: pointer;
+            transition: background var(--transicion);
+        }
+
+        .redo-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .redo-dropdown-item:hover {
+            background: var(--surface-container-high);
+        }
+
         /* Selectores de tipo y zona */
         .redo-filtro-select {
             padding: 0.4rem 0.7rem;
@@ -773,6 +809,14 @@
                     <span class="material-symbols-outlined" style="font-size:1rem">radar</span>
                     Escanear ahora
                 </button>
+                <button class="hogar-boton redo-btn-descargar" id="btnDescargar" title="Descargar dispositivos">
+                    <span class="material-symbols-outlined" style="font-size:1rem">download</span>
+                    Descargar
+                </button>
+                <div class="redo-dropdown-descargar" id="dropdownDescargar" style="display: none;">
+                    <a href="#" class="redo-dropdown-item" id="descargarCSV">📄 CSV</a>
+                    <a href="#" class="redo-dropdown-item" id="descargarJSON">📋 JSON</a>
+                </div>
             </div>
 
             <!-- Tabla -->
@@ -1153,6 +1197,49 @@
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">radar</span> Escanear ahora';
                 });
+        });
+
+        /* ============================================================
+           Descargar dispositivos
+           ============================================================ */
+        document.getElementById('btnDescargar').addEventListener('click', function(e) {
+            e.preventDefault();
+            var dropdown = document.getElementById('dropdownDescargar');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Cerrar dropdown cuando hace clic fuera
+        document.addEventListener('click', function(e) {
+            var dropdown = document.getElementById('dropdownDescargar');
+            var btn = document.getElementById('btnDescargar');
+            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Manejar descargas
+        document.getElementById('descargarCSV').addEventListener('click', function(e) {
+            e.preventDefault();
+            var params = [];
+            if (filtroConfiable === 'confiable') params.push('confiable=1');
+            else if (filtroConfiable === 'desconocido') params.push('confiable=0');
+            if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
+            if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
+            var querystring = params.length ? '?' + params.join('&') : '';
+            window.location.href = BASE + '/api/dispositivos/exportar/csv' + querystring;
+            document.getElementById('dropdownDescargar').style.display = 'none';
+        });
+
+        document.getElementById('descargarJSON').addEventListener('click', function(e) {
+            e.preventDefault();
+            var params = [];
+            if (filtroConfiable === 'confiable') params.push('confiable=1');
+            else if (filtroConfiable === 'desconocido') params.push('confiable=0');
+            if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
+            if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
+            var querystring = params.length ? '?' + params.join('&') : '';
+            window.location.href = BASE + '/api/dispositivos/exportar/json' + querystring;
+            document.getElementById('dropdownDescargar').style.display = 'none';
         });
 
         /* ============================================================

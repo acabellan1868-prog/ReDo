@@ -1,6 +1,10 @@
 """ReDo — Rutas CRUD para dispositivos de la red."""
 
+import io
+import csv
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import Optional
 
 from app import bd
@@ -126,4 +130,101 @@ def actualizar_dispositivo(
 
     return bd.consultar_uno(
         "SELECT * FROM dispositivos WHERE id = ?", (dispositivo_id,)
+    )
+
+
+# ============================================================
+# Exportación de datos
+# ============================================================
+
+@ruta.get("/exportar/csv")
+def exportar_csv(
+    confiable: Optional[int] = Query(None),
+    tipo: Optional[str] = Query(None),
+    zona: Optional[str] = Query(None),
+):
+    """Exporta dispositivos como CSV con filtros aplicados."""
+    # Construir WHERE dinámicamente (reutilizar lógica de listar_dispositivos)
+    where = []
+    parametros = []
+
+    if confiable is not None:
+        where.append("confiable = ?")
+        parametros.append(confiable)
+    if tipo is not None:
+        where.append("tipo = ?")
+        parametros.append(tipo)
+    if zona is not None:
+        where.append("zona = ?")
+        parametros.append(zona)
+
+    sql = "SELECT id, mac, ip, hostname, nombre, tipo, zona, confiable, notas FROM dispositivos"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY ultima_vez DESC"
+
+    dispositivos = bd.consultar_todos(sql, tuple(parametros))
+
+    # Generar CSV
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=["id", "mac", "ip", "hostname", "nombre", "tipo", "zona", "confiable", "notas"],
+    )
+    writer.writeheader()
+    for d in dispositivos:
+        writer.writerow({
+            "id": d["id"],
+            "mac": d["mac"],
+            "ip": d["ip"],
+            "hostname": d["hostname"],
+            "nombre": d["nombre"],
+            "tipo": d["tipo"],
+            "zona": d["zona"],
+            "confiable": d["confiable"],
+            "notas": d["notas"],
+        })
+
+    # Retornar como descarga
+    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=dispositivos_{fecha}.csv"},
+    )
+
+
+@ruta.get("/exportar/json")
+def exportar_json(
+    confiable: Optional[int] = Query(None),
+    tipo: Optional[str] = Query(None),
+    zona: Optional[str] = Query(None),
+):
+    """Exporta dispositivos como JSON con filtros aplicados."""
+    # Construir WHERE dinámicamente (reutilizar lógica de listar_dispositivos)
+    where = []
+    parametros = []
+
+    if confiable is not None:
+        where.append("confiable = ?")
+        parametros.append(confiable)
+    if tipo is not None:
+        where.append("tipo = ?")
+        parametros.append(tipo)
+    if zona is not None:
+        where.append("zona = ?")
+        parametros.append(zona)
+
+    sql = "SELECT * FROM dispositivos"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY ultima_vez DESC"
+
+    dispositivos = bd.consultar_todos(sql, tuple(parametros))
+
+    # Retornar JSON con headers de descarga
+    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return JSONResponse(
+        content=dispositivos,
+        headers={"Content-Disposition": f"attachment; filename=dispositivos_{fecha}.json"},
     )
