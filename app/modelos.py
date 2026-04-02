@@ -33,6 +33,27 @@ class DispositivoActualizar(BaseModel):
 
 
 # ============================================================
+# Tipos de dispositivo
+# ============================================================
+
+class TipoDispositivoRespuesta(BaseModel):
+    clave: str
+    nombre: str
+    icono: str
+
+
+class TipoDispositivoCrear(BaseModel):
+    clave: str
+    nombre: str
+    icono: str
+
+
+class TipoDispositivoActualizar(BaseModel):
+    nombre: Optional[str] = None
+    icono: Optional[str] = None
+
+
+# ============================================================
 # Escaneos
 # ============================================================
 

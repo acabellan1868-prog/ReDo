@@ -705,17 +705,7 @@
             <div class="modal__campo">
                 <label class="modal__label" for="modalTipo">Tipo <span id="modalTipoAuto" class="modal__sugerido"></span></label>
                 <select class="modal__select" id="modalTipo">
-                    <option value="otro">Sin clasificar</option>
-                    <option value="telefono">Telefono</option>
-                    <option value="portatil">Portatil</option>
-                    <option value="sobremesa">PC Sobremesa</option>
-                    <option value="tablet">Tablet</option>
-                    <option value="tv">TV / Streaming</option>
-                    <option value="impresora">Impresora</option>
-                    <option value="router">Router / AP / Switch</option>
-                    <option value="iot">IoT (sensor, enchufe, bombilla)</option>
-                    <option value="servidor">Servidor / NAS</option>
-                    <option value="consola">Consola</option>
+                    <!-- Se puebla dinamicamente desde /api/tipos -->
                 </select>
             </div>
             <div class="modal__campo">
@@ -774,17 +764,7 @@
                 <button class="redo-filtro-btn" data-filtro="desconocido">Desconocidos</button>
                 <select class="redo-filtro-select" id="filtroTipo">
                     <option value="">Tipo: Todos</option>
-                    <option value="telefono">Telefono</option>
-                    <option value="portatil">Portatil</option>
-                    <option value="sobremesa">Sobremesa</option>
-                    <option value="tablet">Tablet</option>
-                    <option value="tv">TV</option>
-                    <option value="impresora">Impresora</option>
-                    <option value="router">Router</option>
-                    <option value="iot">IoT</option>
-                    <option value="servidor">Servidor</option>
-                    <option value="consola">Consola</option>
-                    <option value="otro">Sin clasificar</option>
+                    <!-- Se puebla dinamicamente desde /api/tipos -->
                 </select>
                 <select class="redo-filtro-select" id="filtroZona">
                     <option value="">Zona: Todas</option>
@@ -963,6 +943,33 @@
                     datalist.innerHTML = '';
                     zonas.forEach(function(z) {
                         datalist.innerHTML += '<option value="' + z + '">';
+                    });
+                });
+        }
+
+        function cargarTipos() {
+            fetch(BASE + '/api/tipos')
+                .then(function(r) { return r.json(); })
+                .then(function(tipos) {
+                    // Puebla #modalTipo (sin "Todos", todas las opciones)
+                    var selectModal = document.getElementById('modalTipo');
+                    selectModal.innerHTML = '';
+                    tipos.forEach(function(t) {
+                        selectModal.innerHTML += '<option value="' + t.clave + '">' + t.nombre + '</option>';
+                    });
+
+                    // Puebla #filtroTipo ("Todos" + todas las opciones)
+                    var selectFiltro = document.getElementById('filtroTipo');
+                    var valorActual = selectFiltro.value;
+                    selectFiltro.innerHTML = '<option value="">Tipo: Todos</option>';
+                    tipos.forEach(function(t) {
+                        selectFiltro.innerHTML += '<option value="' + t.clave + '">' + t.nombre + '</option>';
+                    });
+                    selectFiltro.value = valorActual;
+
+                    // Actualizar TIPOS_ICONO dinámicamente (para iconos en tabla)
+                    tipos.forEach(function(t) {
+                        TIPOS_ICONO[t.clave] = t.icono;
                     });
                 });
         }
@@ -1430,6 +1437,7 @@
         /* ============================================================
            Inicializacion
            ============================================================ */
+        cargarTipos();
         cargarResumen();
         cargarDispositivos();
         cargarZonas();

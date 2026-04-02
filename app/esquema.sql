@@ -1,9 +1,16 @@
 -- ============================================================
--- ReDo — Esquema de base de datos v2
+-- ReDo — Esquema de base de datos v3
 -- ============================================================
 
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
+
+-- Catalogo de tipos de dispositivo (gestionable desde la app)
+CREATE TABLE IF NOT EXISTS tipos_dispositivo (
+    clave TEXT PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    icono TEXT NOT NULL
+);
 
 -- Dispositivos detectados en la red
 CREATE TABLE IF NOT EXISTS dispositivos (

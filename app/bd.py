@@ -63,8 +63,36 @@ def inicializar_bd():
             )
             conexion.commit()
 
-    # ── Esquema: crea tablas que no existan (presencia, presencia_diaria, etc.) ──
+    # ── Esquema: crea tablas que no existan (tipos_dispositivo, presencia, etc.) ──
     conexion.executescript(ruta_esquema.read_text(encoding="utf-8"))
+
+    # ── Migración: poblar tipos_dispositivo con datos iniciales ──
+    cuenta = conexion.execute(
+        "SELECT COUNT(*) as n FROM tipos_dispositivo"
+    ).fetchone()["n"]
+    if cuenta == 0:
+        tipos_iniciales = [
+            ("telefono", "Telefono", "smartphone"),
+            ("portatil", "Portatil", "laptop"),
+            ("sobremesa", "PC Sobremesa", "desktop_windows"),
+            ("tablet", "Tablet", "tablet"),
+            ("tv", "TV / Streaming", "tv"),
+            ("impresora", "Impresora", "print"),
+            ("router", "Router / AP / Switch", "router"),
+            ("iot", "IoT (sensor, enchufe, bombilla)", "sensors"),
+            ("servidor", "Servidor / NAS", "dns"),
+            ("consola", "Consola", "videogame_asset"),
+            ("otro", "Sin clasificar", "device_unknown"),
+        ]
+        conexion.executemany(
+            "INSERT INTO tipos_dispositivo (clave, nombre, icono) VALUES (?, ?, ?)",
+            tipos_iniciales,
+        )
+        conexion.commit()
+        import logging
+        logging.getLogger("redo.bd").info(
+            f"Migración tipos_dispositivo: {len(tipos_iniciales)} tipos insertados"
+        )
 
     # ── Migración puntual: auto-detectar tipo en dispositivos existentes ──
     # Solo toca dispositivos con tipo='otro' (sin clasificar) y fabricante conocido.

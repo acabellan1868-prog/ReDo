@@ -101,6 +101,13 @@ def actualizar_dispositivo(
         campos.append("notas = ?")
         valores.append(datos.notas)
     if datos.tipo is not None:
+        # Validar que el tipo exista en el catalogo
+        tipo_valido = bd.consultar_uno(
+            "SELECT clave FROM tipos_dispositivo WHERE clave = ?",
+            (datos.tipo,),
+        )
+        if not tipo_valido:
+            raise HTTPException(400, f"Tipo '{datos.tipo}' no existe en el catalogo")
         campos.append("tipo = ?")
         valores.append(datos.tipo)
         # Si el usuario cambia el tipo manualmente, ya no es auto-detectado

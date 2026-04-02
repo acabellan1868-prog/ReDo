@@ -53,6 +53,7 @@ Desplegado en VM 101 y funcionando.
 
 ### Fase 5 — Configuración y mejoras pendientes
 
+- [ ] Gestión de tipos de dispositivos (SQLite CRUD) — tabla tipos_dispositivo, API /api/tipos, frontend dinámico (2026-04-01, en progreso)
 - [ ] Pantalla de configuración en ReDo (red, intervalo, presencia días, NTFY)
 - [ ] Vista agrupada por zona (dispositivos agrupados en vez de lista plana)
 - [x] Auto-detección de tipo por fabricante — 60+ reglas, campo tipo_auto, indicador en modal (2026-03-26)
