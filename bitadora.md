@@ -4,9 +4,9 @@ Registro detallado del trabajo día a día.
 
 ---
 
-## 2026-04-01 — Gestión de tipos de dispositivos (Opción A: SQLite)
+## 2026-04-01/02 — Gestión de tipos de dispositivos (Opción A: SQLite) ✅
 
-### ✅ Completado
+### ✅ COMPLETADO
 
 **Backend:**
 - [x] Migración esquema.sql v2 → v3: nueva tabla `tipos_dispositivo`
