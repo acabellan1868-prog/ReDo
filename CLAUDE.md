@@ -70,6 +70,10 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 | GET | `/api/estado` | Resumen: total, confiables, desconocidos, último escaneo, `por_tipo` |
 | GET | `/api/dispositivos` | Lista dispositivos (filtros: `confiable`, `tipo`, `zona`) |
 | GET | `/api/dispositivos/zonas` | Lista de zonas en uso (para autocompletado) |
+| GET | `/api/tipos` | Catalogo de tipos de dispositivo (clave, nombre, icono) |
+| POST | `/api/tipos` | Crear tipo nuevo (clave, nombre, icono) |
+| PUT | `/api/tipos/{clave}` | Editar tipo (nombre, icono) |
+| DELETE | `/api/tipos/{clave}` | Eliminar tipo (reasigna dispositivos a 'otro') |
 | PUT | `/api/dispositivos/{mac}` | Editar nombre, tipo, zona, notas, confiable |
 | POST | `/api/escanear` | Lanza escaneo manual |
 | GET | `/api/eventos` | SSE — eventos `fin_escaneo` y `error_escaneo` |
@@ -92,6 +96,32 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 | `REDO_PRESENCIA_DIAS` | Días de detalle de presencia antes de agregar (defecto 180) |
 | `NTFY_TOPIC` | Topic de ntfy para alertas |
 | `PORT` | Puerto del servidor (por defecto 8083) |
+
+---
+
+## Catálogo de tipos de dispositivos
+
+Tabla `tipos_dispositivo` (gestión por API):
+
+| Clave | Nombre | Icono | Descripción |
+|---|---|---|---|
+| `telefono` | Teléfono | `smartphone` | Teléfonos móviles |
+| `portatil` | Portátil | `laptop` | Portátiles y laptops |
+| `sobremesa` | PC Sobremesa | `desktop_windows` | Ordenadores de escritorio |
+| `tablet` | Tablet | `tablet` | Tablets y iPad |
+| `tv` | TV / Streaming | `tv` | Smart TVs, Chromecast, Fire TV |
+| `impresora` | Impresora | `print` | Impresoras y multifuncionales |
+| `router` | Router / AP / Switch | `router` | Routers, puntos de acceso, switches |
+| `iot` | IoT | `sensors` | Sensores, enchufes, bombillas, etc. |
+| `servidor` | Servidor / NAS | `dns` | Servidores, NAS, Proxmox |
+| `consola` | Consola | `videogame_asset` | Consolas de videojuegos |
+| `otro` | Sin clasificar | `device_unknown` | Valor por defecto (no se puede eliminar) |
+
+**Notas:**
+- Los tipos se poblan automáticamente en la primera inicialización (migración en `bd.py`)
+- El frontend carga tipos dinámicamente desde `/api/tipos` al iniciar
+- Los iconos son Material Symbols (ej: `smartphone`, `laptop`, etc.)
+- Al eliminar un tipo, los dispositivos que lo usaban se reasignan a `otro`
 
 ---
 
