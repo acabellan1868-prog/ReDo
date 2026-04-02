@@ -2,10 +2,15 @@
 
 ## Estado actual
 
-**Fecha:** 2026-03-26
+**Fecha:** 2026-04-02 — **FASE 5 COMPLETADA ✅**
 
-Implementadas las mejoras de tipo/zona y presencia de dispositivos.
-Desplegado en VM 101 y funcionando.
+Todas las tareas planificadas han sido implementadas y testeadas:
+- Exportación de datos (CSV/JSON)
+- Vista agrupada por zona
+- Historial de escaneos con gráfico
+- Configuración en vivo del sistema
+
+Desplegado en VM 101 y funcionando correctamente.
 
 ---
 
@@ -51,11 +56,13 @@ Desplegado en VM 101 y funcionando.
 - [x] Marcas de hora completas (0-24) en desktop, cada 3h en móvil (2026-03-26)
 - [x] Responsive completo del panel de detalle (columnas, fuentes, padding adaptados a móvil) (2026-03-26)
 
-### Fase 5 — Configuración y mejoras pendientes
+### Fase 5 — Configuración y mejoras ✅ **COMPLETADA**
 
 - [x] Gestión de tipos de dispositivos (SQLite CRUD) — tabla tipos_dispositivo, API /api/tipos, frontend dinámico (2026-04-01 a 2026-04-02)
 - [x] Exportar listado de dispositivos — endpoints /api/dispositivos/exportar/{csv,json}, botón dropdown en toolbar (2026-04-02)
 - [x] Vista agrupada por zona — dispositivos agrupados en tarjetas, toggle vista lista/agrupada (2026-04-02)
 - [x] Historial de escaneos con gráfico temporal — endpoint /api/escaneos/estadisticas/por-fecha, gráfico SVG (2026-04-02)
 - [x] Auto-detección de tipo por fabricante — 60+ reglas, campo tipo_auto, indicador en modal (2026-03-26)
-- [ ] Pantalla de configuración en ReDo (red, intervalo, presencia días, NTFY) — post-Fase 5
+- [x] **Configuración en vivo** — tabla configuracion, API CRUD con validaciones, modal emergente tipo FiDo (2026-04-02)
+
+**Status:** ✅ Todos los objetivos alcanzados. Sistema completamente funcional y listo para producción.

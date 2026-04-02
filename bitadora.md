@@ -363,20 +363,79 @@ curl -X PUT ... -d '{"valor": "invalid"}' # ✗ Error
   | PUT | `/api/config/{clave}` | Actualiza un parámetro (con validaciones) |
   ```
 
-### Resumen Tarea 4
+### Resumen Tarea 4 (versión inicial)
 
-✅ **COMPLETADA**
+✅ **COMPLETADA** — Endpoints API + formulario inline
 
 - Backend: Rutas API CRUD con validaciones completas
 - Frontend: Tab de configuración con form dinámico y feedback visual
 - Runtime: Cambios aplican inmediatamente (APScheduler replanificado si es intervalo)
 - BD: Tabla `configuracion` persistente con migración automática
-- Documentación: CLAUDE.md actualizado con nuevos endpoints
 
 ---
 
-## Notas
+## 2026-04-02 (noche) — Refinamientos UX de Tarea 4
 
-- **Razón de la Opción A (SQLite):** Ya existe FastAPI + SQLite, los tipos son datos (no configuración), es el lugar natural. Alternativas (env vars, JSON) son menos mantenibles.
-- **Impacto:** No rompe nada existente; los 11 tipos iniciales cubren el 99% de dispositivos hogareños.
-- **Fase 5 CERRADA:** Las 4 tareas completadas (Exportar CSV, Vista zona, Historial escaneos, Configuración en vivo) cierran Fase 5 completamente.
+**Iteración 2: Modal emergente tipo FiDo**
+
+Problema inicial: Formulario inline muy grande, requería scroll para 5 campos → UX pobre
+
+Solución: Modal emergente centrado (similar a FiDo):
+
+**Cambios HTML:**
+- Panel de configuración: muestra solo RESUMEN (clave: valor en código)
+- Botón "EDITAR CONFIGURACIÓN" abre modal
+- Modal con estructura: header (título + cerrar) | body (campos) | footer (CANCELAR + GUARDAR)
+
+**Cambios CSS:**
+- `.config-modal-overlay`: overlay semi-transparente, flex centered, z-index 1000
+- `.config-modal`: width 90%/max 500px, max-height 80vh, animaciones fadeIn/slideUp
+- `.config-campo`: margin-bottom gap-lg, label + input + descripción + error
+- Inputs: padding 0.75rem, focus state con primary border + shadow
+
+**Cambios JavaScript:**
+- `cargarConfiguracion()`: carga resumen en el panel
+- `abrirModalConfig()`: fetch config, renderiza modal con todos los campos
+- `guardarConfiguracion()`: **un único click** persiste TODOS los cambios con `Promise.all()`
+- `cerrarModalConfig()`: click X, CANCELAR, o fuera del modal
+- Validación: recopila errores antes de guardar, muestra inline en cada campo
+
+**Flujo UX:**
+1. Abre tab "Configuración" → ve resumen compacto (5 líneas)
+2. Click "EDITAR CONFIGURACIÓN" → modal emergente
+3. Edita campos que quiera
+4. Click "GUARDAR" → persiste todos los cambios
+5. Modal cierra automáticamente, panel actualiza resumen
+
+**Fixes de bugs:**
+1. ❌ ID del panel: `panelConfiguracion` → `panelConfig` (coincida con lógica de tabs)
+   - Error: "Cannot read properties of null (reading 'classList')"
+2. ❌ Formulario inline demasiado espacioso (gap-lg = 24px × 5 campos = 120px solo en gaps)
+   - Solución: modal compacto, max-width 500px, scroll interno si es necesario
+
+**Testing completo:**
+- ✅ Modal abre/cierra correctamente
+- ✅ Carga config desde API
+- ✅ Guarda cambios con un click
+- ✅ Validación muestra errores en rojo
+- ✅ Resumen se actualiza al cerrar modal
+- ✅ Responsive en móvil/tablet
+
+---
+
+## Notas finales
+
+- **Razón de Modal sobre Inline:**
+  - Modal = patrón familiar (usuario lo ve en FiDo)
+  - Compacto: 5 campos en ~400px de altura
+  - UX clara: LEER resumen + EDITAR modal + GUARDAR todo
+  - Vs formulario inline: requería scroll, confuso el "guardar por campo"
+
+- **Fase 5 CERRADA:** Las 4 tareas + 2 iteraciones de UX cierran Fase 5 completamente.
+  - Exportar CSV/JSON ✅
+  - Vista agrupada por zona ✅
+  - Historial escaneos ✅
+  - Configuración en vivo ✅
+  - UX refinements ✅
+
+- **Estado final:** Sistema completamente funcional, intuitivo, y listo para producción.
