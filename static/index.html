@@ -602,6 +602,56 @@
             .detalle-horas-marcas span:nth-child(3n+1) { display: inline; }
         }
 
+        /* ── Historial de escaneos ── */
+        .historial-controles {
+            display: flex;
+            gap: var(--gap-md);
+            align-items: center;
+            margin-bottom: var(--gap-lg);
+            padding: var(--gap-md);
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-lg);
+        }
+
+        .historial-grafico {
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-xl);
+            padding: var(--gap-lg);
+            box-shadow: var(--sombra-sm);
+            margin-bottom: var(--gap-lg);
+            min-height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .historial-grafico canvas {
+            width: 100%;
+            height: 300px;
+        }
+
+        .historial-datos {
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-lg);
+            padding: var(--gap-md);
+            font-size: 0.85rem;
+            color: var(--on-surface-variant);
+        }
+
+        .historial-datos-fila {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            padding: var(--gap-sm) 0;
+            border-bottom: 1px solid var(--surface-container);
+        }
+
+        .historial-datos-fila:last-child { border-bottom: none; }
+
+        .historial-datos-fila__label {
+            font-weight: 600;
+            color: var(--on-surface);
+        }
+
         /* ── Modal de edicion ── */
         .modal-overlay {
             position: fixed;
@@ -881,6 +931,10 @@
                 <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">timeline</span>
                 Presencia
             </button>
+            <button class="redo-tab" data-tab="historial">
+                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">bar_chart</span>
+                Historial
+            </button>
         </div>
 
         <!-- ======== PANEL: DISPOSITIVOS ======== -->
@@ -951,6 +1005,24 @@
                 <div class="timeline-vacio">Selecciona una fecha para ver la presencia</div>
             </div>
             <div class="detalle-presencia" id="detallePresencia"></div>
+        </div>
+
+        <!-- ======== PANEL: HISTORIAL ESCANEOS ======== -->
+        <div class="redo-panel" id="panelHistorial">
+            <div class="historial-controles">
+                <label class="modal__label" style="margin-bottom:0">Período (días):</label>
+                <select class="redo-filtro-select" id="filtroHistorialDias">
+                    <option value="7">Últimos 7 días</option>
+                    <option value="30" selected>Últimos 30 días</option>
+                    <option value="90">Últimos 90 días</option>
+                    <option value="180">Últimos 6 meses</option>
+                </select>
+                <button class="hogar-boton" id="btnCargarHistorial" style="margin-left: auto;">Cargar</button>
+            </div>
+            <div class="historial-grafico" id="historialGrafico">
+                <div class="sin-datos">Cargando datos de escaneos...</div>
+            </div>
+            <div class="historial-datos" id="historialDatos"></div>
         </div>
 
     </main>
@@ -1050,6 +1122,7 @@
                     .classList.add('redo-panel--activo');
 
                 if (destino === 'presencia') cargarTimeline();
+                if (destino === 'historial') cargarHistorial();
             });
         });
 
@@ -1668,6 +1741,104 @@
             // Scroll al panel
             setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
         }
+
+        /* ============================================================
+           Historial de escaneos
+           ============================================================ */
+        function cargarHistorial() {
+            var dias = document.getElementById('filtroHistorialDias').value || 30;
+            var container = document.getElementById('historialGrafico');
+            container.innerHTML = '<div class="sin-datos">Cargando...</div>';
+
+            fetch(BASE + '/api/escaneos/estadisticas/por-fecha?dias=' + dias)
+                .then(function(r) { return r.json(); })
+                .then(function(datos) {
+                    if (!datos || datos.length === 0) {
+                        container.innerHTML = '<div class="sin-datos">Sin datos de escaneos para este período</div>';
+                        return;
+                    }
+
+                    // Invertir para mostrar más reciente a la derecha
+                    datos = datos.reverse();
+
+                    // Renderizar gráfico simple (SVG)
+                    var ancho = 800;
+                    var alto = 300;
+                    var margen = 40;
+                    var areaAncho = ancho - margen * 2;
+                    var areaAlto = alto - margen * 2;
+
+                    // Calcular escala
+                    var maxEncontrados = Math.max(...datos.map(d => d.promedio_encontrados || 0));
+                    var maxDuracion = Math.max(...datos.map(d => d.duracion_promedio_seg || 0));
+                    var escalaX = areaAncho / (datos.length - 1 || 1);
+                    var escalaEncontrados = areaAlto / (maxEncontrados || 1);
+                    var escalaDuracion = areaAlto / (maxDuracion || 1);
+
+                    // Generar SVG
+                    var svg = '<svg width="100%" viewBox="0 0 ' + ancho + ' ' + alto + '" style="background: var(--surface-container-lowest)">';
+
+                    // Ejes
+                    svg += '<line x1="' + margen + '" y1="' + (alto - margen) + '" x2="' + (ancho - margen) + '" y2="' + (alto - margen) + '" stroke="var(--surface-container-high)" stroke-width="1"/>';
+                    svg += '<line x1="' + margen + '" y1="' + margen + '" x2="' + margen + '" y2="' + (alto - margen) + '" stroke="var(--surface-container-high)" stroke-width="1"/>';
+
+                    // Barras (duración)
+                    datos.forEach(function(d, i) {
+                        var x = margen + (i * escalaX);
+                        var altoBarra = (d.duracion_promedio_seg || 0) * escalaDuracion;
+                        var y = alto - margen - altoBarra;
+                        svg += '<rect x="' + (x - 6) + '" y="' + y + '" width="12" height="' + altoBarra + '" fill="rgba(156, 163, 175, 0.3)" title="' + d.fecha + ': ' + (d.duracion_promedio_seg || 0) + 's"/>';
+                    });
+
+                    // Línea (promedio encontrados)
+                    var puntos = [];
+                    datos.forEach(function(d, i) {
+                        var x = margen + (i * escalaX);
+                        var altoPunto = (d.promedio_encontrados || 0) * escalaEncontrados;
+                        var y = alto - margen - altoPunto;
+                        puntos.push(x + ',' + y);
+                    });
+                    if (puntos.length > 0) {
+                        svg += '<polyline points="' + puntos.join(' ') + '" fill="none" stroke="var(--primary)" stroke-width="2"/>';
+                    }
+
+                    // Puntos
+                    datos.forEach(function(d, i) {
+                        var x = margen + (i * escalaX);
+                        var altoPunto = (d.promedio_encontrados || 0) * escalaEncontrados;
+                        var y = alto - margen - altoPunto;
+                        svg += '<circle cx="' + x + '" cy="' + y + '" r="3" fill="var(--primary)" title="' + d.fecha + ': ' + (d.promedio_encontrados || 0) + ' encontrados"/>';
+                    });
+
+                    svg += '</svg>';
+
+                    container.innerHTML = svg;
+
+                    // Mostrar datos en tabla
+                    var tablaDatos = '<div style="font-size:0.8rem;color:var(--on-surface-variant)">';
+                    datos.forEach(function(d) {
+                        tablaDatos += '<div class="historial-datos-fila">' +
+                            '<div class="historial-datos-fila__label">' + d.fecha + '</div>' +
+                            '<div>' +
+                                'Escaneos: ' + d.num_escaneos + ' · ' +
+                                'Promedio: ' + (d.promedio_encontrados || 0).toFixed(1) + ' · ' +
+                                'Máx nuevos: ' + (d.max_nuevos || 0) + ' · ' +
+                                'Duración: ' + ((d.duracion_promedio_seg || 0) / 60).toFixed(1) + ' min' +
+                            '</div>' +
+                        '</div>';
+                    });
+                    tablaDatos += '</div>';
+                    document.getElementById('historialDatos').innerHTML = tablaDatos;
+                })
+                .catch(function(e) {
+                    console.error('Error cargando historial:', e);
+                    container.innerHTML = '<div class="sin-datos">Error al cargar datos</div>';
+                });
+        }
+
+        // Event listener para botón Cargar y selector de días
+        document.getElementById('btnCargarHistorial').addEventListener('click', cargarHistorial);
+        document.getElementById('filtroHistorialDias').addEventListener('change', cargarHistorial);
 
         function cerrarDetalle() {
             var panel = document.getElementById('detallePresencia');
