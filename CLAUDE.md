@@ -79,6 +79,9 @@ Si hogar.css no carga, el problema está en nginx, no en ReDo.
 | PUT | `/api/dispositivos/{mac}` | Editar nombre, tipo, zona, notas, confiable |
 | POST | `/api/escanear` | Lanza escaneo manual |
 | GET | `/api/escaneos/estadisticas/por-fecha` | Estadísticas diarias de escaneos (gráficos) |
+| GET | `/api/config` | Listado de parámetros de configuración editables |
+| GET | `/api/config/{clave}` | Obtiene un parámetro de configuración específico |
+| PUT | `/api/config/{clave}` | Actualiza un parámetro (con validaciones) |
 | GET | `/api/eventos` | SSE — eventos `fin_escaneo` y `error_escaneo` |
 | GET | `/api/logs` | Historial de escaneos |
 | GET | `/api/presencia/dispositivos/{id}` | Presencia de un dispositivo (`?dias=7`) |

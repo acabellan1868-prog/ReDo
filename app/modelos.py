@@ -116,6 +116,23 @@ class DispositivoTimeline(BaseModel):
 
 
 # ============================================================
+# Configuracion
+# ============================================================
+
+class ConfiguracionRespuesta(BaseModel):
+    clave: str
+    valor: str
+    tipo: str  # string, int, float
+    editable: int
+    descripcion: Optional[str] = None
+    ultima_actualizacion: Optional[str] = None
+
+
+class ConfiguracionActualizar(BaseModel):
+    valor: str  # El usuario manda el valor como string, backend lo convierte
+
+
+# ============================================================
 # Resumen (para hogarOS portal)
 # ============================================================
 

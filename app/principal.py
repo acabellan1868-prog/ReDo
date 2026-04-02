@@ -15,7 +15,7 @@ from apscheduler.triggers.cron import CronTrigger
 from app.bd import inicializar_bd
 from app.config import RUTA_BD, INTERVALO_ESCANEO, PRESENCIA_DIAS_DETALLE
 from app.escaner import escanear_red
-from app.rutas import resumen, dispositivos, escaneos, presencia, alertas, tipos
+from app.rutas import resumen, dispositivos, escaneos, presencia, alertas, tipos, config
 
 # Configurar logging
 logging.basicConfig(
@@ -201,6 +201,7 @@ app.include_router(escaneos.ruta, prefix="/api/escaneos", tags=["Escaneos"])
 app.include_router(presencia.ruta, prefix="/api/presencia", tags=["Presencia"])
 app.include_router(alertas.ruta, prefix="/api/alertas", tags=["Alertas"])
 app.include_router(tipos.ruta, prefix="/api/tipos", tags=["Tipos"])
+app.include_router(config.ruta, prefix="/api/config", tags=["Configuracion"])
 
 
 # ---- Ruta de conveniencia: POST /api/escanear ----

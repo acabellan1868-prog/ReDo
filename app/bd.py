@@ -94,6 +94,33 @@ def inicializar_bd():
             f"Migración tipos_dispositivo: {len(tipos_iniciales)} tipos insertados"
         )
 
+    # ── Migración: poblar configuracion con valores iniciales ──
+    cuenta = conexion.execute(
+        "SELECT COUNT(*) as n FROM configuracion"
+    ).fetchone()["n"]
+    if cuenta == 0:
+        from app.config import (
+            RED_OBJETIVO, INTERVALO_ESCANEO, PRESENCIA_DIAS_DETALLE,
+            NTFY_URL, NTFY_TOPIC
+        )
+        config_inicial = [
+            ("red_objetivo", RED_OBJETIVO, "string", 1, "Red a escanear (CIDR)"),
+            ("intervalo_escaneo", str(INTERVALO_ESCANEO), "int", 1, "Segundos entre escaneos automáticos"),
+            ("presencia_dias_detalle", str(PRESENCIA_DIAS_DETALLE), "int", 1, "Días de historial detallado"),
+            ("ntfy_url", NTFY_URL, "string", 1, "URL base de NTFY"),
+            ("ntfy_topic", NTFY_TOPIC, "string", 1, "Topic de NTFY para alertas"),
+        ]
+        conexion.executemany(
+            """INSERT INTO configuracion
+               (clave, valor, tipo, editable, descripcion)
+               VALUES (?, ?, ?, ?, ?)""",
+            config_inicial,
+        )
+        conexion.commit()
+        logging.getLogger("redo.bd").info(
+            f"Migración configuracion: {len(config_inicial)} variables insertadas"
+        )
+
     # ── Migración puntual: auto-detectar tipo en dispositivos existentes ──
     # Solo toca dispositivos con tipo='otro' (sin clasificar) y fabricante conocido.
     # Se importa aquí (lazy) para evitar dependencia circular.

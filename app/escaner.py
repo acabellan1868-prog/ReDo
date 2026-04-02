@@ -8,7 +8,6 @@ import logging
 from datetime import datetime
 
 from app import bd
-from app.config import RED_OBJETIVO
 from app.notificador import notificar_dispositivo_nuevo
 
 logger = logging.getLogger("redo.escaner")
@@ -91,6 +90,26 @@ def inferir_tipo(fabricante: str | None) -> str | None:
     return None
 
 
+def obtener_red_objetivo() -> str:
+    """
+    Lee la red objetivo desde la BD (tabla configuracion).
+    Si no existe o hay error, usa fallback a 192.168.31.0/24.
+    """
+    try:
+        config = bd.consultar_uno(
+            "SELECT valor FROM configuracion WHERE clave = ?",
+            ("red_objetivo",),
+        )
+        if config:
+            return config["valor"]
+    except Exception as e:
+        logger.warning(f"Error al leer red_objetivo de BD: {e}")
+
+    # Fallback a configuración por defecto
+    from app.config import RED_OBJETIVO
+    return RED_OBJETIVO
+
+
 def escanear_red() -> dict:
     """
     Ejecuta un escaneo ARP de la red local.
@@ -118,8 +137,9 @@ def escanear_red() -> dict:
     nuevos = 0
 
     try:
+        red_objetivo = obtener_red_objetivo()
         nm = nmap.PortScanner()
-        nm.scan(hosts=RED_OBJETIVO, arguments="-sn")
+        nm.scan(hosts=red_objetivo, arguments="-sn")
 
         for host in nm.all_hosts():
             ip = host

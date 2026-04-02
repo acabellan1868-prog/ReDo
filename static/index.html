@@ -671,6 +671,85 @@
             color: var(--on-surface);
         }
 
+        /* ── Formulario de configuración ── */
+        .config-item {
+            background: var(--surface-container-lowest);
+            border-radius: var(--radio-lg);
+            padding: var(--gap-md);
+            margin-bottom: var(--gap-md);
+            border-left: 4px solid var(--primary);
+        }
+
+        .config-item__titulo {
+            font-weight: 600;
+            color: var(--on-surface);
+            font-size: 0.95rem;
+            margin-bottom: var(--gap-sm);
+        }
+
+        .config-item__descripcion {
+            font-size: 0.8rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--gap-md);
+        }
+
+        .config-item__control {
+            display: flex;
+            gap: var(--gap-md);
+            align-items: center;
+        }
+
+        .config-item input,
+        .config-item select {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--outline);
+            border-radius: var(--radio-sm);
+            background: var(--surface);
+            color: var(--on-surface);
+            font-family: var(--fuente-body);
+        }
+
+        .config-item input:focus,
+        .config-item select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-container);
+        }
+
+        .config-item__btn {
+            padding: 0.5rem 1.5rem;
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            border-radius: var(--radio-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--transicion);
+        }
+
+        .config-item__btn:hover {
+            background: var(--primary-dim);
+        }
+
+        .config-item__btn:disabled {
+            background: var(--surface-container);
+            color: var(--on-surface-variant);
+            cursor: not-allowed;
+        }
+
+        .config-item__error {
+            color: var(--peligro);
+            font-size: 0.8rem;
+            margin-top: var(--gap-sm);
+        }
+
+        .config-item__exito {
+            color: var(--exito);
+            font-size: 0.8rem;
+            margin-top: var(--gap-sm);
+        }
+
         /* ── Modal de edicion ── */
         .modal-overlay {
             position: fixed;
@@ -954,6 +1033,10 @@
                 <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">bar_chart</span>
                 Historial
             </button>
+            <button class="redo-tab" data-tab="config">
+                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">settings</span>
+                Configuración
+            </button>
         </div>
 
         <!-- ======== PANEL: DISPOSITIVOS ======== -->
@@ -1042,6 +1125,16 @@
                 <div class="sin-datos">Cargando datos de escaneos...</div>
             </div>
             <div class="historial-datos" id="historialDatos"></div>
+        </div>
+
+        <!-- ======== PANEL: CONFIGURACION ======== -->
+        <div class="redo-panel" id="panelConfiguracion">
+            <p style="margin-bottom: var(--gap-lg); color: var(--on-surface-variant);">
+                ⚙️ Parámetros de configuración del sistema. Los cambios se aplican inmediatamente.
+            </p>
+            <div id="configFormContainer">
+                <div class="sin-datos">Cargando configuración...</div>
+            </div>
         </div>
 
     </main>
@@ -1142,6 +1235,7 @@
 
                 if (destino === 'presencia') cargarTimeline();
                 if (destino === 'historial') cargarHistorial();
+                if (destino === 'config') cargarConfiguracion();
             });
         });
 
@@ -1875,6 +1969,97 @@
         // Event listener para botón Cargar y selector de días
         document.getElementById('btnCargarHistorial').addEventListener('click', cargarHistorial);
         document.getElementById('filtroHistorialDias').addEventListener('change', cargarHistorial);
+
+        /* ============================================================
+           Configuracion
+           ============================================================ */
+        function cargarConfiguracion() {
+            var container = document.getElementById('configFormContainer');
+            container.innerHTML = '<div class="sin-datos">Cargando configuración...</div>';
+
+            fetch(BASE + '/api/config')
+                .then(function(r) {
+                    if (!r.ok) throw new Error('Error al cargar configuración');
+                    return r.json();
+                })
+                .then(function(datos) {
+                    if (!datos || datos.length === 0) {
+                        container.innerHTML = '<div class="sin-datos">Sin parámetros de configuración disponibles</div>';
+                        return;
+                    }
+
+                    var html = '';
+                    datos.forEach(function(config) {
+                        var inputType = config.tipo === 'int' ? 'number' : (config.tipo === 'float' ? 'number' : 'text');
+                        var step = config.tipo === 'float' ? '0.1' : '';
+
+                        html += '<div class="config-item" data-clave="' + config.clave + '">' +
+                            '<div class="config-item__titulo">' + config.clave.replace(/_/g, ' ').toUpperCase() + '</div>' +
+                            '<div class="config-item__descripcion">' + (config.descripcion || '') + '</div>' +
+                            '<div class="config-item__control">' +
+                                '<input type="' + inputType + '" value="' + (config.valor || '') + '" ' +
+                                (step ? 'step="' + step + '" ' : '') +
+                                'class="config-input" data-clave="' + config.clave + '" data-tipo="' + config.tipo + '">' +
+                                '<button class="config-item__btn" onclick="actualizarConfig(\'' + config.clave + '\')">Guardar</button>' +
+                            '</div>' +
+                            '<div class="config-mensaje" data-clave="' + config.clave + '"></div>' +
+                        '</div>';
+                    });
+
+                    container.innerHTML = html;
+
+                    // Event listeners para actualizar al presionar Enter
+                    document.querySelectorAll('.config-input').forEach(function(input) {
+                        input.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                actualizarConfig(this.getAttribute('data-clave'));
+                            }
+                        });
+                    });
+                })
+                .catch(function(e) {
+                    console.error('Error cargando configuración:', e);
+                    container.innerHTML = '<div class="sin-datos">Error al cargar configuración</div>';
+                });
+        }
+
+        function actualizarConfig(clave) {
+            var input = document.querySelector('.config-input[data-clave="' + clave + '"]');
+            var valor = input.value;
+            var mensajeDiv = document.querySelector('.config-mensaje[data-clave="' + clave + '"]');
+            var btn = input.parentElement.querySelector('button');
+
+            if (!valor || valor.trim() === '') {
+                mensajeDiv.innerHTML = '<div class="config-item__error">El valor no puede estar vacío</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+            mensajeDiv.innerHTML = '';
+
+            fetch(BASE + '/api/config/' + clave, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valor: valor })
+            })
+                .then(function(r) {
+                    if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Error desconocido'); });
+                    return r.json();
+                })
+                .then(function(data) {
+                    btn.disabled = false;
+                    btn.textContent = 'Guardar';
+                    mensajeDiv.innerHTML = '<div class="config-item__exito">✓ Configuración actualizada correctamente</div>';
+                    setTimeout(function() { mensajeDiv.innerHTML = ''; }, 3000);
+                })
+                .catch(function(e) {
+                    btn.disabled = false;
+                    btn.textContent = 'Guardar';
+                    console.error('Error actualizando config:', e);
+                    mensajeDiv.innerHTML = '<div class="config-item__error">✗ ' + e.message + '</div>';
+                });
+        }
 
         function cerrarDetalle() {
             var panel = document.getElementById('detallePresencia');

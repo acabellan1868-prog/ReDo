@@ -1,9 +1,19 @@
 -- ============================================================
--- ReDo — Esquema de base de datos v3
+-- ReDo — Esquema de base de datos v4
 -- ============================================================
 
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
+
+-- Configuracion del sistema (editable desde interfaz)
+CREATE TABLE IF NOT EXISTS configuracion (
+    clave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    tipo TEXT NOT NULL DEFAULT 'string',
+    editable INTEGER NOT NULL DEFAULT 1,
+    descripcion TEXT,
+    ultima_actualizacion TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 -- Catalogo de tipos de dispositivo (gestionable desde la app)
 CREATE TABLE IF NOT EXISTS tipos_dispositivo (
@@ -70,6 +80,7 @@ CREATE TABLE IF NOT EXISTS presencia_diaria (
 );
 
 -- Indices para rendimiento
+CREATE INDEX IF NOT EXISTS idx_config_editable ON configuracion(editable);
 CREATE INDEX IF NOT EXISTS idx_dispositivos_mac ON dispositivos(mac);
 CREATE INDEX IF NOT EXISTS idx_dispositivos_confiable ON dispositivos(confiable);
 CREATE INDEX IF NOT EXISTS idx_dispositivos_tipo ON dispositivos(tipo);

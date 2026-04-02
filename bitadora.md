@@ -244,8 +244,139 @@ curl "http://192.168.31.131/red/api/dispositivos/exportar/csv" > dispositivos.cs
 
 ---
 
+## 2026-04-02 (noche) — Fase 5: Tarea 4 - Configuración en vivo ✅
+
+**Contexto:** Las 3 tareas anteriores (Exportar CSV, Vista agrupada, Historial escaneos) fueron completadas y testeadas. Ahora se termina Fase 5 con Configuración en vivo.
+
+### Backend: Rutas API
+
+**Archivo: `app/rutas/config.py` (NUEVO)**
+
+- [x] Endpoint `GET /api/config` — lista parámetros editables
+- [x] Endpoint `GET /api/config/{clave}` — obtiene un parámetro
+- [x] Endpoint `PUT /api/config/{clave}` — actualiza con validaciones:
+  - `red_objetivo`: valida CIDR IPv4 (usa `ipaddress.IPv4Network`)
+  - `intervalo_escaneo`: entero 60-3600 segundos
+  - `presencia_dias_detalle`: entero 1-365 días
+  - `ntfy_url`: debe ser http:// o https://
+  - `ntfy_topic`: no puede estar vacío
+- [x] Función `_aplicar_config_en_runtime()`:
+  - Si `intervalo_escaneo` cambia → replanifica job APScheduler
+  - Si `presencia_dias_detalle` cambia → se aplica en próx ciclo
+  - Otros parámetros se aplican en próx escaneo
+
+**Archivo: `app/modelos.py` (MODIFICADO)**
+
+- [x] Modelo `ConfiguracionRespuesta` (clave, valor, tipo, editable, descripcion, ultima_actualizacion)
+- [x] Modelo `ConfiguracionActualizar` (valor como string)
+
+**Archivo: `app/principal.py` (MODIFICADO)**
+
+- [x] Importado módulo `config`
+- [x] Registrado router con `app.include_router(config.ruta, prefix="/api/config")`
+
+**Archivo: `app/escaner.py` (MODIFICADO)**
+
+- [x] Removed import de `RED_OBJETIVO` desde `app/config`
+- [x] Nueva función `obtener_red_objetivo()`: lee de BD, con fallback a config.py
+- [x] Modificado `escanear_red()` para usar `obtener_red_objetivo()` dinámicamente
+
+**Archivo: `app/esquema.sql` (MODIFICADO en sesión anterior)**
+
+- [x] Tabla `configuracion`: clave (PK), valor, tipo, editable, descripcion, ultima_actualizacion
+- [x] Índice `idx_config_editable`
+
+**Archivo: `app/bd.py` (MODIFICADO en sesión anterior)**
+
+- [x] Migración que puebla `configuracion` con 5 variables iniciales (red_objetivo, intervalo_escaneo, presencia_dias_detalle, ntfy_url, ntfy_topic)
+
+### Frontend: Tab de Configuración
+
+**Archivo: `static/index.html` (MODIFICADO)**
+
+**Tab button (línea ~957):**
+- [x] Nuevo botón `data-tab="config"` con icono `settings`
+- [x] Texto: "Configuración"
+
+**Panel (línea ~1056):**
+- [x] Nuevo `<div id="panelConfiguracion">`
+- [x] Contenedor `#configFormContainer` para renderizar dinámicamente
+
+**CSS (líneas ~673-743):**
+- [x] `.config-item` — tarjeta de configuración (border-left 4px primary)
+- [x] `.config-item__titulo` — nombre del parámetro
+- [x] `.config-item__descripcion` — explicación
+- [x] `.config-item__control` — flex con input + botón
+- [x] `.config-item input` — estilos de input con focus state
+- [x] `.config-item__btn` — botón Guardar con estados disabled/hover
+- [x] `.config-item__error` — mensaje de error (rojo)
+- [x] `.config-item__exito` — mensaje de éxito (verde)
+
+**JavaScript (líneas ~1976-2060):**
+- [x] Función `cargarConfiguracion()`:
+  - Fetch `GET /api/config`
+  - Renderiza form dinámicamente (un item por parámetro)
+  - Inputtype: text, number según tipo (int/float/string)
+  - Botón Guardar para cada parámetro
+  - Event listener: Enter en input dispara actualizar
+- [x] Función `actualizarConfig(clave)`:
+  - Validación client-side (no vacío)
+  - Fetch `PUT /api/config/{clave}` con {valor}
+  - Manejo de errores: muestra mensaje desde API
+  - Feedback visual: "Guardando..." → "✓ Actualizado" o "✗ Error"
+  - Mensaje desaparece en 3 segundos
+- [x] Tab switch: call `cargarConfiguracion()` cuando se selecciona tab "config"
+
+**Testing:**
+```bash
+# API OK?
+curl http://192.168.31.131/red/api/config
+curl http://192.168.31.131/red/api/config/red_objetivo
+
+# Actualizar config
+curl -X PUT http://192.168.31.131/red/api/config/intervalo_escaneo \
+  -H "Content-Type: application/json" \
+  -d '{"valor": "120"}'
+
+# Validación CIDR
+curl -X PUT http://192.168.31.131/red/api/config/red_objetivo \
+  -H "Content-Type: application/json" \
+  -d '{"valor": "192.168.1.0/24"}'  # ✓ OK
+# vs
+curl -X PUT ... -d '{"valor": "invalid"}' # ✗ Error
+
+# Frontend: click tab Configuración
+# - Cargar 5 parámetros
+# - Editar uno (ej: intervalo_escaneo → 120)
+# - Verificar mensaje "✓ Actualizado"
+# - Próximo escaneo usa nuevo intervalo
+```
+
+### Documentación
+
+**Archivo: `CLAUDE.md` (MODIFICADO)**
+
+- [x] Agregadas 3 nuevas rutas API en tabla:
+  ```
+  | GET | `/api/config` | Listado de parámetros de configuración editables |
+  | GET | `/api/config/{clave}` | Obtiene un parámetro de configuración específico |
+  | PUT | `/api/config/{clave}` | Actualiza un parámetro (con validaciones) |
+  ```
+
+### Resumen Tarea 4
+
+✅ **COMPLETADA**
+
+- Backend: Rutas API CRUD con validaciones completas
+- Frontend: Tab de configuración con form dinámico y feedback visual
+- Runtime: Cambios aplican inmediatamente (APScheduler replanificado si es intervalo)
+- BD: Tabla `configuracion` persistente con migración automática
+- Documentación: CLAUDE.md actualizado con nuevos endpoints
+
+---
+
 ## Notas
 
 - **Razón de la Opción A (SQLite):** Ya existe FastAPI + SQLite, los tipos son datos (no configuración), es el lugar natural. Alternativas (env vars, JSON) son menos mantenibles.
 - **Impacto:** No rompe nada existente; los 11 tipos iniciales cubren el 99% de dispositivos hogareños.
-- **Próximo paso:** Si se termina hoy, se podría agregar una pestaña "Tipos" en ReDo para gestionar el catálogo desde la UI.
+- **Fase 5 CERRADA:** Las 4 tareas completadas (Exportar CSV, Vista zona, Historial escaneos, Configuración en vivo) cierran Fase 5 completamente.
