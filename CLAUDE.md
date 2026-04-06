@@ -64,7 +64,7 @@ ReDo/
 | `REDO_NETWORK` | Red a escanear (ej: `192.168.31.0/24`) |
 | `REDO_SCAN_INTERVAL` | Intervalo escaneo automático (segundos) |
 | `REDO_PRESENCIA_DIAS` | Días detalle presencia antes de agregar (defecto 180) |
-| `NTFY_TOPIC` | Topic ntfy |
+| `NTFY_TOPIC` | Topic NTFY (intermediario de transporte) para alertas. Valor en `.env`, nunca hardcoded. |
 | `PORT` | Puerto servidor (defecto 8083) |
 
 ## hogar.css
