@@ -1,1140 +1,816 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-tema-cockpit="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ReDo — Red Domestica</title>
+    <title>ReDo — Red Doméstica</title>
     <link rel="stylesheet" href="/static/hogar.css">
     <style>
-        /* Estilos específicos de ReDo (no del design system) */
+        /* ── Layout base ── */
+        body {
+            background: var(--ck-bg);
+            color: var(--ck-on-surface);
+            font-family: var(--ck-fuente);
+            margin: 0;
+            min-height: 100vh;
+        }
 
-        /* Resumen — grid de mini-tarjetas */
-        .redo-resumen {
+        .redo-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem 2rem;
+        }
+
+        /* ── Mobile only / desktop only ── */
+        .redo-mobile-only { display: none; }
+        @media (max-width: 720px) {
+            .redo-mobile-only { display: flex; }
+            .redo-desktop-only { display: none !important; }
+        }
+
+        /* ── Drawer móvil ── */
+        .redo-drawer-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+        }
+        .redo-drawer {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: 220px;
+            background: var(--ck-bg2);
+            border-left: 1px solid var(--ck-line);
+            z-index: 201;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 0.75rem;
+            gap: 0.25rem;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+        }
+        .redo-drawer--abierto { transform: translateX(0); }
+        .redo-drawer__cerrar {
+            align-self: flex-end;
+            background: none; border: none;
+            color: var(--ck-on-variant); cursor: pointer;
+            font-size: 1.4rem; line-height: 1;
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .redo-drawer__item {
+            background: none; border: none;
+            color: var(--ck-on-variant);
+            font-family: var(--ck-fuente);
+            font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            padding: 0.6rem 0.75rem;
+            border-radius: 3px;
+            cursor: pointer; text-align: left;
+            transition: background 0.15s, color 0.15s;
+        }
+        .redo-drawer__item:hover { background: rgba(128,128,128,0.1); color: var(--ck-on-surface); }
+        .redo-drawer__item--activo { color: var(--ck-accent); }
+        .redo-drawer__sep { height: 1px; background: var(--ck-line); margin: 0.25rem 0; }
+
+        /* ── KPIs ── */
+        .redo-kpis {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: var(--gap-md);
-            margin-bottom: var(--gap-xl);
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--ck-line);
+            border: 1px solid var(--ck-line);
+            margin-bottom: 1.25rem;
         }
+        @media (max-width: 600px) { .redo-kpis { grid-template-columns: repeat(2, 1fr); } }
 
-        .redo-resumen-tarjeta {
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-xl);
-            padding: var(--gap-lg);
-            text-align: center;
-            box-shadow: var(--sombra-sm);
-            transition: box-shadow var(--transicion);
+        .redo-kpi {
+            background: var(--ck-bg2);
+            padding: 0.9rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
         }
-
-        .redo-resumen-tarjeta:hover {
-            box-shadow: var(--sombra-md);
-        }
-
-        .redo-resumen-tarjeta__label {
-            font-family: var(--fuente-titular);
-            font-size: 0.6rem;
+        .redo-kpi__label {
+            font-size: 0.48rem;
             text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--on-surface-variant);
-            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: var(--ck-on-variant);
         }
-
-        .redo-resumen-tarjeta__valor {
-            font-family: var(--fuente-titular);
+        .redo-kpi__val {
             font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--primary);
+            font-weight: 700;
+            color: var(--ck-accent);
             letter-spacing: -0.02em;
+            line-height: 1;
         }
+        .redo-kpi__val--ok    { color: var(--ck-success); }
+        .redo-kpi__val--warn  { color: var(--ck-danger); }
+        .redo-kpi__val--fecha { font-size: 0.85rem; font-weight: 600; color: var(--ck-on-variant); line-height: 1.2; }
 
-        .redo-resumen-tarjeta--ok .redo-resumen-tarjeta__valor { color: var(--exito); }
-        .redo-resumen-tarjeta--alerta .redo-resumen-tarjeta__valor { color: var(--peligro); }
-        .redo-resumen-tarjeta--fecha .redo-resumen-tarjeta__valor {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--on-surface-variant);
-        }
-
-        /* Filtros */
-        .redo-filtros {
-            display: flex;
-            gap: var(--gap-sm);
-            margin-bottom: var(--gap-md);
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .redo-filtro-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: var(--radio-full);
-            background: var(--surface-container);
-            font-family: var(--fuente-titular);
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            color: var(--on-surface-variant);
-            transition: background var(--transicion), color var(--transicion);
-        }
-
-        .redo-filtro-btn:hover {
-            background: var(--surface-container-high);
-        }
-
-        .redo-filtro-btn--activo {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dim));
-            color: var(--on-primary);
-        }
-
-        .redo-btn-escanear {
-            margin-left: auto;
-        }
-
-        .redo-btn-descargar {
-            position: relative;
-        }
-
-        .redo-dropdown-descargar {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--surface-container);
-            border: 1px solid var(--surface-container-high);
-            border-radius: var(--radio-lg);
-            min-width: 120px;
-            box-shadow: var(--sombra-md);
-            z-index: 100;
-            margin-top: 0.5rem;
-        }
-
-        .redo-dropdown-item {
-            display: block;
-            padding: 0.6rem 1rem;
-            color: var(--on-surface);
-            text-decoration: none;
-            font-size: 0.85rem;
-            border-bottom: 1px solid var(--surface-container-high);
-            cursor: pointer;
-            transition: background var(--transicion);
-        }
-
-        .redo-dropdown-item:last-child {
-            border-bottom: none;
-        }
-
-        .redo-dropdown-item:hover {
-            background: var(--surface-container-high);
-        }
-
-        /* Vista agrupada por tipo → zona */
-        .tipo-grupo {
-            margin-bottom: var(--gap-xl);
-            padding-bottom: var(--gap-lg);
-            border-bottom: 3px solid var(--surface-container);
-        }
-
-        .tipo-grupo:last-child {
-            border-bottom: none;
-        }
-
-        .tipo-titulo {
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: var(--primary);
-            margin: var(--gap-md) 0 var(--gap-lg) 0;
-            text-transform: capitalize;
-        }
-
-        .zona-grupo {
-            margin: var(--gap-md) 0 var(--gap-lg) 0;
-            margin-left: var(--gap-md);
-        }
-
-        .zona-titulo {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--on-surface-variant);
-            margin: var(--gap-md) 0;
-            padding-bottom: var(--gap-sm);
-            border-bottom: 1px solid var(--surface-container-high);
-        }
-
-        .zona-dispositivos {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: var(--gap-md);
-        }
-
-        .dispositivo-tarjeta {
-            background: var(--surface-container-lowest);
-            border: 1px solid var(--surface-container-high);
-            border-radius: var(--radio-lg);
-            padding: var(--gap-md);
-            box-shadow: var(--sombra-sm);
-            transition: box-shadow var(--transicion), border var(--transicion);
-            cursor: pointer;
-        }
-
-        .dispositivo-tarjeta:hover {
-            box-shadow: var(--sombra-md);
-            border-color: var(--primary);
-        }
-
-        .dispositivo-tarjeta__tipo {
-            font-size: 2rem;
-            margin-bottom: var(--gap-sm);
-            color: var(--primary);
-        }
-
-        .dispositivo-tarjeta__nombre {
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--on-surface);
-            margin-bottom: var(--gap-xs);
-            word-break: break-word;
-        }
-
-        .dispositivo-tarjeta__mac {
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: var(--on-surface-variant);
-            margin-bottom: var(--gap-sm);
-        }
-
-        .dispositivo-tarjeta__info {
-            font-size: 0.78rem;
-            color: var(--on-surface-variant);
-            margin-bottom: var(--gap-sm);
-        }
-
-        .dispositivo-tarjeta__estado {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: var(--radio-full);
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-bottom: var(--gap-sm);
-        }
-
-        .dispositivo-tarjeta__acciones {
-            display: flex;
-            gap: var(--gap-xs);
-            margin-top: var(--gap-sm);
-        }
-
-        .dispositivo-tarjeta__btn {
-            flex: 1;
-            padding: 0.3rem 0.5rem;
-            border: none;
-            border-radius: var(--radio-full);
-            font-size: 0.65rem;
-            cursor: pointer;
-            background: var(--surface-container);
-            color: var(--on-surface-variant);
-            transition: opacity var(--transicion);
-        }
-
-        .dispositivo-tarjeta__btn:hover {
-            opacity: 0.8;
-        }
-
-        /* Selectores de tipo y zona */
-        .redo-filtro-select {
-            padding: 0.4rem 0.7rem;
-            border: 1px solid var(--surface-container-high);
-            border-radius: var(--radio-full);
-            background: var(--surface-container);
-            font-family: var(--fuente-titular);
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--on-surface-variant);
-            cursor: pointer;
-            appearance: auto;
-        }
-
-        /* Tabla */
-        .nombre-disp {
-            color: var(--on-surface);
-            font-size: 0.88rem;
-            font-weight: 600;
-        }
-
-        .hostname {
-            color: var(--on-surface-variant);
-            font-size: 0.78rem;
-        }
-
-        .fecha-col {
-            font-size: 0.78rem;
-            color: var(--on-surface-variant);
-            white-space: nowrap;
-        }
-
-        .sin-datos {
-            text-align: center;
-            padding: 2rem;
-            color: var(--on-surface-variant);
-            font-style: italic;
-        }
-
-        /* Icono de tipo en la tabla */
-        .icono-tipo {
-            font-size: 1.2rem;
-            color: var(--primary);
-            vertical-align: middle;
-        }
-
-        .zona-badge {
-            font-size: 0.68rem;
-            color: var(--on-surface-variant);
-            background: var(--surface-container);
-            padding: 0.15rem 0.5rem;
-            border-radius: var(--radio-full);
-            white-space: nowrap;
-        }
-
-        /* Botones de acción en tabla */
-        .btn-accion {
-            padding: 0.3rem 0.6rem;
-            border: none;
-            border-radius: var(--radio-full);
-            font-family: var(--fuente-titular);
-            font-size: 0.68rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            transition: opacity var(--transicion);
-        }
-
-        .btn-accion:hover { opacity: 0.8; }
-
-        .btn-accion--confiable {
-            background: var(--exito-fondo);
-            color: var(--exito);
-        }
-
-        .btn-accion--desconocido {
-            background: var(--peligro-fondo);
-            color: var(--peligro);
-        }
-
-        .btn-accion--nombre {
-            background: rgba(164, 238, 224, 0.2);
-            color: var(--primary);
-        }
-
-        .btn-accion--presencia {
-            background: rgba(164, 200, 238, 0.2);
-            color: var(--primary);
-        }
-
-        /* ── Pestanas Dispositivos / Presencia ── */
+        /* ── Nav pestañas ── */
         .redo-tabs {
             display: flex;
-            gap: var(--gap-xs);
-            margin-bottom: var(--gap-lg);
-            border-bottom: 2px solid var(--surface-container);
+            border-bottom: 1px solid var(--ck-line);
+            margin-bottom: 1.25rem;
+            gap: 0;
         }
-
         .redo-tab {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            background: none;
-            font-family: var(--fuente-titular);
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--on-surface-variant);
+            background: none; border: none;
+            font-family: var(--ck-fuente);
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--ck-on-variant);
+            padding: 0.6rem 1.1rem;
             cursor: pointer;
             border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: color var(--transicion), border-color var(--transicion);
+            margin-bottom: -1px;
+            display: flex; align-items: center; gap: 0.4rem;
+            transition: color 0.15s, border-color 0.15s;
         }
-
-        .redo-tab:hover { color: var(--on-surface); }
-
-        .redo-tab--activo {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
+        .redo-tab:hover { color: var(--ck-on-surface); }
+        .redo-tab--activo { color: var(--ck-accent); border-bottom-color: var(--ck-accent); }
+        .redo-tab .material-symbols-outlined { font-size: 0.9rem; }
 
         .redo-panel { display: none; }
         .redo-panel--activo { display: block; }
 
-        /* ── Timeline de presencia ── */
-        .timeline-controles {
+        /* ── Filtros ── */
+        .redo-filtros {
             display: flex;
-            gap: var(--gap-md);
-            align-items: center;
-            margin-bottom: var(--gap-lg);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
             flex-wrap: wrap;
+            align-items: center;
+        }
+        .redo-filtro-btn {
+            background: var(--ck-bg3); border: 1px solid var(--ck-line);
+            color: var(--ck-on-variant);
+            font-family: var(--ck-fuente);
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 0.35rem 0.8rem;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .redo-filtro-btn:hover { border-color: var(--ck-accent-dim); color: var(--ck-on-surface); }
+        .redo-filtro-btn--activo { border-color: var(--ck-accent); color: var(--ck-accent); }
+
+        .redo-select {
+            background: var(--ck-bg3); border: 1px solid var(--ck-line);
+            color: var(--ck-on-variant);
+            font-family: var(--ck-fuente);
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 0.35rem 0.6rem;
+            cursor: pointer;
+            appearance: auto;
+        }
+        .redo-select:focus { outline: none; border-color: var(--ck-accent); }
+
+        .redo-btn {
+            background: var(--ck-bg3); border: 1px solid var(--ck-line);
+            color: var(--ck-on-variant);
+            font-family: var(--ck-fuente);
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 0.35rem 0.9rem;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 0.35rem;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .redo-btn:hover { border-color: var(--ck-accent-dim); color: var(--ck-on-surface); }
+        .redo-btn--accent {
+            border-color: var(--ck-accent-dim);
+            color: var(--ck-accent);
+        }
+        .redo-btn--accent:hover { border-color: var(--ck-accent); background: rgba(0,229,196,0.06); }
+        .redo-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .redo-btn .material-symbols-outlined { font-size: 0.9rem; }
+
+        .redo-btn-escanear { margin-left: auto; }
+
+        /* ── Dropdown descarga ── */
+        .redo-dropdown-wrap { position: relative; }
+        .redo-dropdown {
+            position: absolute; top: 100%; right: 0;
+            background: var(--ck-bg2); border: 1px solid var(--ck-line);
+            min-width: 120px;
+            z-index: 100; margin-top: 2px;
+        }
+        .redo-dropdown a {
+            display: block;
+            padding: 0.5rem 0.9rem;
+            color: var(--ck-on-variant);
+            text-decoration: none;
+            font-size: 0.62rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            border-bottom: 1px solid var(--ck-line);
+            transition: color 0.15s, background 0.15s;
+        }
+        .redo-dropdown a:last-child { border-bottom: none; }
+        .redo-dropdown a:hover { color: var(--ck-accent); background: var(--ck-row-hover); }
+
+        /* ── Tabla ── */
+        .redo-tabla-wrap { overflow-x: auto; }
+        .redo-tabla {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+        }
+        .redo-tabla thead tr {
+            border-bottom: 1px solid var(--ck-line-bright);
+        }
+        .redo-tabla th {
+            font-size: 0.48rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.18em;
+            color: var(--ck-on-variant);
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .redo-tabla td {
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid var(--ck-line);
+            vertical-align: middle;
+        }
+        .redo-tabla tbody tr:hover { background: var(--ck-row-hover); }
+
+        .redo-icono-tipo {
+            font-size: 1.1rem;
+            color: var(--ck-accent);
+            vertical-align: middle;
+        }
+        .redo-ip { font-weight: 700; color: var(--ck-on-surface); font-size: 0.8rem; }
+        .redo-nombre { font-weight: 700; font-size: 0.78rem; color: var(--ck-on-surface); }
+        .redo-mac { font-size: 0.65rem; color: var(--ck-on-variant); }
+        .redo-fabricante { font-size: 0.65rem; color: var(--ck-on-variant); }
+        .redo-fecha { font-size: 0.65rem; color: var(--ck-on-variant); white-space: nowrap; }
+
+        .redo-badge {
+            font-size: 0.55rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 0.2rem 0.5rem;
+            border: 1px solid;
+        }
+        .redo-badge--ok { color: var(--ck-success); border-color: rgba(58,232,160,0.3); }
+        .redo-badge--warn { color: var(--ck-danger); border-color: rgba(232,84,84,0.3); }
+
+        .redo-zona-badge {
+            font-size: 0.6rem; color: var(--ck-on-variant);
+            background: rgba(128,128,128,0.08);
+            padding: 0.15rem 0.5rem;
+            border: 1px solid var(--ck-line);
         }
 
-        .timeline-fecha {
-            padding: 0.4rem 0.7rem;
-            border: 1px solid var(--surface-container-high);
-            border-radius: var(--radio-md);
-            background: var(--surface-container);
-            font-family: var(--fuente-titular);
-            font-size: 0.85rem;
-            color: var(--on-surface);
+        .redo-accion-btn {
+            background: none; border: 1px solid var(--ck-line);
+            color: var(--ck-on-variant);
+            font-family: var(--ck-fuente);
+            font-size: 0.55rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 0.2rem 0.5rem;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
         }
+        .redo-accion-btn:hover { border-color: var(--ck-accent-dim); color: var(--ck-on-surface); }
+        .redo-accion-btn--ok { color: var(--ck-success); border-color: rgba(58,232,160,0.3); }
+        .redo-accion-btn--ok:hover { border-color: var(--ck-success); }
+        .redo-accion-btn--warn { color: var(--ck-danger); border-color: rgba(232,84,84,0.3); }
+        .redo-accion-btn--warn:hover { border-color: var(--ck-danger); }
+
+        .sin-datos {
+            text-align: center; padding: 2rem;
+            color: var(--ck-on-variant); font-size: 0.72rem;
+        }
+
+        /* ── Vista agrupada ── */
+        .tipo-grupo {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--ck-line);
+        }
+        .tipo-grupo:last-child { border-bottom: none; }
+        .tipo-titulo {
+            font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-accent);
+            margin: 0 0 0.75rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .tipo-titulo .material-symbols-outlined { font-size: 1rem; }
+        .zona-grupo { margin: 0.5rem 0 1rem 1rem; }
+        .zona-titulo {
+            font-size: 0.55rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-on-variant);
+            margin: 0 0 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--ck-line);
+        }
+        .zona-dispositivos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1px; background: var(--ck-line);
+        }
+        .disp-tarjeta {
+            background: var(--ck-bg2);
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .disp-tarjeta:hover { background: var(--ck-bg3); }
+        .disp-tarjeta__tipo { font-size: 1.3rem; color: var(--ck-accent); margin-bottom: 0.35rem; }
+        .disp-tarjeta__nombre { font-size: 0.72rem; font-weight: 700; color: var(--ck-on-surface); margin-bottom: 0.2rem; }
+        .disp-tarjeta__mac { font-size: 0.6rem; color: var(--ck-on-variant); margin-bottom: 0.35rem; }
+        .disp-tarjeta__info { font-size: 0.6rem; color: var(--ck-on-variant); margin-bottom: 0.35rem; line-height: 1.4; }
+        .disp-tarjeta__acciones { display: flex; gap: 0.35rem; margin-top: 0.5rem; }
+
+        /* ── Timeline presencia ── */
+        .redo-controles {
+            display: flex; gap: 0.75rem; align-items: center;
+            margin-bottom: 1rem; flex-wrap: wrap;
+        }
+        .redo-label {
+            font-size: 0.55rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-on-variant);
+        }
+        .redo-input-date {
+            background: var(--ck-bg3); border: 1px solid var(--ck-line);
+            color: var(--ck-on-surface);
+            font-family: var(--ck-fuente); font-size: 0.72rem;
+            padding: 0.35rem 0.6rem;
+        }
+        .redo-input-date:focus { outline: none; border-color: var(--ck-accent); }
 
         .timeline-container {
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-xl);
-            padding: var(--gap-lg);
-            box-shadow: var(--sombra-sm);
+            background: var(--ck-bg2);
+            border: 1px solid var(--ck-line);
+            padding: 1rem;
         }
-
         .timeline-cabecera {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: var(--gap-sm);
-            padding-bottom: var(--gap-sm);
-            border-bottom: 1px solid var(--surface-container);
-            margin-bottom: var(--gap-sm);
+            display: grid; grid-template-columns: 180px 1fr;
+            gap: 0.5rem; padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--ck-line); margin-bottom: 0.5rem;
         }
-
         .timeline-horas {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.6rem;
-            color: var(--on-surface-variant);
-            font-family: var(--fuente-titular);
-            font-weight: 600;
+            display: flex; justify-content: space-between;
+            font-size: 0.5rem; color: var(--ck-on-variant);
+            font-weight: 700; letter-spacing: 0.08em;
         }
-
         .timeline-fila {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: var(--gap-sm);
-            align-items: center;
-            padding: 0.4rem 0;
-            border-bottom: 1px solid var(--surface-container);
+            display: grid; grid-template-columns: 180px 1fr;
+            gap: 0.5rem; align-items: center;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid var(--ck-line);
+            cursor: pointer;
+            transition: background 0.1s;
         }
-
         .timeline-fila:last-child { border-bottom: none; }
+        .timeline-fila:hover { background: var(--ck-row-hover); }
+        .timeline-fila--seleccionada { background: rgba(0,229,196,0.05); }
+        [data-tema-cockpit="light"] .timeline-fila--seleccionada { background: rgba(26,106,96,0.05); }
 
         .timeline-dispositivo {
-            display: flex;
-            align-items: center;
-            gap: var(--gap-sm);
-            overflow: hidden;
+            display: flex; align-items: center; gap: 0.4rem; overflow: hidden;
         }
-
+        .timeline-dispositivo .material-symbols-outlined { font-size: 0.9rem; color: var(--ck-accent); flex-shrink: 0; }
         .timeline-dispositivo__nombre {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--on-surface);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.68rem; font-weight: 600; color: var(--ck-on-surface);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-
         .timeline-barra {
-            position: relative;
-            height: 20px;
-            background: var(--surface-container);
-            border-radius: var(--radio-sm);
+            position: relative; height: 16px;
+            background: var(--ck-bg3);
             overflow: hidden;
         }
-
         .timeline-franja {
-            position: absolute;
-            top: 2px;
-            bottom: 2px;
-            background: linear-gradient(135deg, var(--primary), var(--exito));
-            border-radius: var(--radio-sm);
-            opacity: 0.85;
+            position: absolute; top: 2px; bottom: 2px;
+            background: var(--ck-accent);
+            opacity: 0.7;
         }
-
-        .timeline-franja:hover {
-            opacity: 1;
-        }
-
-        .timeline-vacio {
-            text-align: center;
-            padding: 2rem;
-            color: var(--on-surface-variant);
-            font-style: italic;
-        }
-
-        .timeline-fila { cursor: pointer; }
-        .timeline-fila:hover { background: var(--surface-container); border-radius: var(--radio-sm); }
-        .timeline-fila--seleccionada { background: var(--surface-container-high); border-radius: var(--radio-sm); }
-
-        /* ── Detalle de presencia de un dispositivo ── */
-        .detalle-presencia {
-            margin-top: var(--gap-lg);
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-xl);
-            padding: var(--gap-lg);
-            box-shadow: var(--sombra-sm);
-            display: none;
-        }
-
-        .detalle-presencia--visible { display: block; }
-
-        .detalle-cabecera {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: var(--gap-sm);
-            margin-bottom: var(--gap-lg);
-        }
-
-        .detalle-titulo {
-            display: flex;
-            align-items: center;
-            gap: var(--gap-sm);
-            font-family: var(--fuente-titular);
-            font-size: 1rem;
-            font-weight: 800;
-            color: var(--on-surface);
-        }
-
-        .detalle-controles {
-            display: flex;
-            align-items: center;
-            gap: var(--gap-sm);
-        }
-
-        .detalle-btn-dias {
-            padding: 0.3rem 0.7rem;
-            border: 1px solid var(--surface-container-high);
-            border-radius: var(--radio-md);
-            background: var(--surface-container);
-            font-family: var(--fuente-cuerpo);
-            font-size: 0.75rem;
-            color: var(--on-surface-variant);
-            cursor: pointer;
-            transition: all var(--transicion);
-        }
-
-        .detalle-btn-dias--activo {
-            background: var(--primary);
-            color: var(--on-primary);
-            border-color: var(--primary);
-        }
-
-        .detalle-cerrar {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--on-surface-variant);
-            padding: 0.2rem;
-            border-radius: var(--radio-sm);
-            transition: color var(--transicion);
-        }
-
-        .detalle-cerrar:hover { color: var(--on-surface); }
-
-        .detalle-dia {
-            display: grid;
-            grid-template-columns: 90px 1fr 70px;
-            gap: var(--gap-sm);
-            align-items: center;
-            padding: 0.35rem 0;
-            border-bottom: 1px solid var(--surface-container);
-        }
-
-        .detalle-dia:last-child { border-bottom: none; }
-
-        .detalle-dia__fecha {
-            font-family: var(--fuente-titular);
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--on-surface);
-        }
-
-        .detalle-dia__hoy { color: var(--primary); }
-
-        .detalle-dia__barra {
-            position: relative;
-            height: 24px;
-            background: var(--surface-container);
-            border-radius: var(--radio-sm);
-            overflow: hidden;
-        }
-
-        .detalle-dia__franja {
-            position: absolute;
-            top: 3px;
-            bottom: 3px;
-            background: linear-gradient(135deg, var(--primary), var(--exito));
-            border-radius: var(--radio-sm);
-            opacity: 0.85;
-        }
-
-        .detalle-dia__franja:hover { opacity: 1; }
-
-        .detalle-dia__tiempo {
-            font-size: 0.7rem;
-            color: var(--on-surface-variant);
-            text-align: right;
-            font-family: var(--fuente-titular);
-            font-weight: 600;
-        }
-
-        .detalle-horas-cabecera {
-            display: grid;
-            grid-template-columns: 90px 1fr 70px;
-            gap: var(--gap-sm);
-            margin-bottom: 0.3rem;
-        }
-
-        .detalle-horas-marcas {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.55rem;
-            color: var(--on-surface-variant);
-            font-family: var(--fuente-titular);
-            font-weight: 600;
-        }
-
-        .detalle-sin-datos {
-            text-align: center;
-            padding: 1.5rem;
-            color: var(--on-surface-variant);
-            font-style: italic;
-            font-size: 0.85rem;
-        }
+        .timeline-franja:hover { opacity: 1; }
+        .timeline-vacio { padding: 2rem; text-align: center; color: var(--ck-on-variant); font-size: 0.72rem; }
 
         @media (max-width: 600px) {
-            .detalle-presencia { padding: var(--gap-md); }
-            .detalle-cabecera { flex-direction: column; align-items: flex-start; }
-            .detalle-dia {
-                grid-template-columns: 50px 1fr 40px;
-            }
-            .detalle-dia__fecha { font-size: 0.65rem; }
-            .detalle-dia__tiempo { font-size: 0.6rem; }
-            .detalle-horas-cabecera {
-                grid-template-columns: 50px 1fr 40px;
-            }
-            /* En movil, mostrar solo horas cada 3 */
+            .timeline-fila, .timeline-cabecera { grid-template-columns: 120px 1fr; }
+        }
+
+        /* ── Detalle presencia ── */
+        .detalle-presencia {
+            margin-top: 1rem; display: none;
+            background: var(--ck-bg2); border: 1px solid var(--ck-line);
+            padding: 1rem;
+        }
+        .detalle-presencia--visible { display: block; }
+        .detalle-cabecera {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;
+        }
+        .detalle-titulo {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.72rem; font-weight: 700; color: var(--ck-on-surface);
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .detalle-titulo .material-symbols-outlined { font-size: 0.9rem; color: var(--ck-accent); }
+        .detalle-controles { display: flex; align-items: center; gap: 0.35rem; }
+        .detalle-btn-dias {
+            background: none; border: 1px solid var(--ck-line);
+            color: var(--ck-on-variant);
+            font-family: var(--ck-fuente); font-size: 0.6rem; font-weight: 700;
+            padding: 0.2rem 0.5rem; cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .detalle-btn-dias:hover { border-color: var(--ck-accent-dim); color: var(--ck-on-surface); }
+        .detalle-btn-dias--activo { border-color: var(--ck-accent); color: var(--ck-accent); }
+        .detalle-cerrar {
+            background: none; border: none;
+            color: var(--ck-on-variant); cursor: pointer; padding: 0.2rem;
+        }
+        .detalle-cerrar:hover { color: var(--ck-on-surface); }
+
+        .detalle-horas-cabecera { display: grid; grid-template-columns: 80px 1fr 60px; gap: 0.5rem; margin-bottom: 0.25rem; }
+        .detalle-horas-marcas {
+            display: flex; justify-content: space-between;
+            font-size: 0.45rem; color: var(--ck-on-variant); font-weight: 700;
+        }
+        .detalle-dia {
+            display: grid; grid-template-columns: 80px 1fr 60px;
+            gap: 0.5rem; align-items: center;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid var(--ck-line);
+        }
+        .detalle-dia:last-child { border-bottom: none; }
+        .detalle-dia__fecha {
+            font-size: 0.6rem; font-weight: 700; color: var(--ck-on-surface);
+        }
+        .detalle-dia__hoy { color: var(--ck-accent); }
+        .detalle-dia__barra {
+            position: relative; height: 18px; background: var(--ck-bg3);
+            overflow: hidden;
+        }
+        .detalle-dia__franja {
+            position: absolute; top: 3px; bottom: 3px;
+            background: var(--ck-accent); opacity: 0.7;
+        }
+        .detalle-dia__franja:hover { opacity: 1; }
+        .detalle-dia__tiempo {
+            font-size: 0.6rem; color: var(--ck-on-variant);
+            text-align: right; font-weight: 600;
+        }
+        .detalle-sin-datos { text-align: center; padding: 1rem; color: var(--ck-on-variant); font-size: 0.7rem; }
+
+        @media (max-width: 600px) {
+            .detalle-horas-cabecera { grid-template-columns: 48px 1fr 44px; }
+            .detalle-dia { grid-template-columns: 48px 1fr 44px; }
+            .detalle-dia__fecha { font-size: 0.52rem; }
             .detalle-horas-marcas span { display: none; }
             .detalle-horas-marcas span:nth-child(3n+1) { display: inline; }
         }
 
-        /* ── Historial de escaneos ── */
-        .historial-controles {
-            display: flex;
-            gap: var(--gap-md);
-            align-items: center;
-            margin-bottom: var(--gap-lg);
-            padding: var(--gap-md);
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-lg);
-        }
-
+        /* ── Historial ── */
         .historial-grafico {
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-xl);
-            padding: var(--gap-lg);
-            box-shadow: var(--sombra-sm);
-            margin-bottom: var(--gap-lg);
-            min-height: 350px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: var(--ck-bg2); border: 1px solid var(--ck-line);
+            padding: 1rem;
+            min-height: 200px;
+            margin-bottom: 1rem;
+            display: flex; align-items: center; justify-content: center;
         }
-
-        .historial-grafico canvas {
-            width: 100%;
-            height: 300px;
+        .historial-tabla { font-size: 0.65rem; }
+        .historial-fila {
+            display: grid; grid-template-columns: 100px 1fr;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--ck-line);
         }
+        .historial-fila:last-child { border-bottom: none; }
+        .historial-fila__label { font-weight: 700; color: var(--ck-on-surface); }
+        .historial-fila__val { color: var(--ck-on-variant); }
 
-        .historial-datos {
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-lg);
-            padding: var(--gap-md);
-            font-size: 0.85rem;
-            color: var(--on-surface-variant);
+        /* ── Config ── */
+        .config-resumen { font-size: 0.72rem; }
+        .config-resumen-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--ck-line);
         }
-
-        .historial-datos-fila {
-            display: grid;
-            grid-template-columns: 120px 1fr;
-            padding: var(--gap-sm) 0;
-            border-bottom: 1px solid var(--surface-container);
+        .config-resumen-item:last-child { border-bottom: none; }
+        .config-resumen-clave {
+            font-size: 0.52rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-on-variant);
+            margin-bottom: 0.2rem;
         }
+        .config-resumen-val { color: var(--ck-accent); font-size: 0.72rem; }
 
-        .historial-datos-fila:last-child { border-bottom: none; }
-
-        .historial-datos-fila__label {
-            font-weight: 600;
-            color: var(--on-surface);
-        }
-
-        /* ── Modal de configuración ── */
-        .config-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .config-modal {
-            background: var(--surface);
-            border-radius: var(--radio-xl);
-            box-shadow: var(--sombra-lg);
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .config-modal__header {
-            padding: var(--gap-lg);
-            border-bottom: 1px solid var(--surface-container);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .config-modal__titulo {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--on-surface);
-            margin: 0;
-        }
-
-        .config-modal__cerrar {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--on-surface-variant);
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radio-full);
-            transition: background var(--transicion);
-        }
-
-        .config-modal__cerrar:hover {
-            background: var(--surface-container);
-        }
-
-        .config-modal__body {
-            padding: var(--gap-lg);
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .config-campo {
-            margin-bottom: var(--gap-lg);
-        }
-
-        .config-campo:last-child {
-            margin-bottom: 0;
-        }
-
-        .modal__label {
-            display: block;
-            font-weight: 600;
-            color: var(--on-surface);
-            font-size: 0.9rem;
-            margin-bottom: var(--gap-sm);
-        }
-
-        .modal__help {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--on-surface-variant);
-            margin-top: 0.25rem;
-        }
-
-        .config-campo input,
-        .config-campo select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--outline);
-            border-radius: var(--radio-md);
-            background: var(--surface-container-lowest);
-            color: var(--on-surface);
-            font-family: var(--fuente-body);
-            font-size: 0.95rem;
-            box-sizing: border-box;
-        }
-
-        .config-campo input:focus,
-        .config-campo select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-container);
-        }
-
-        .config-error {
-            color: var(--peligro);
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
-        }
-
-        .config-modal__footer {
-            padding: var(--gap-lg);
-            border-top: 1px solid var(--surface-container);
-            display: flex;
-            gap: var(--gap-md);
-            justify-content: flex-end;
-        }
-
-        .config-modal__footer .hogar-boton {
-            min-width: 120px;
-        }
-
-        /* ── Modal de edicion ── */
+        /* ── Modal edición ── */
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 300;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
         }
-
-        .modal-overlay--visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
+        .modal-overlay--visible { opacity: 1; pointer-events: auto; }
         .modal {
-            background: var(--surface-container-lowest);
-            border-radius: var(--radio-xl);
-            padding: var(--gap-xl);
-            width: 90%;
-            max-width: 420px;
-            box-shadow: var(--sombra-lg);
+            background: var(--ck-bg2); border: 1px solid var(--ck-line);
+            padding: 1.5rem;
+            width: 90%; max-width: 400px;
         }
-
         .modal__titulo {
-            font-family: var(--fuente-titular);
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--on-surface);
-            margin-bottom: var(--gap-lg);
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-on-surface);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--ck-line);
         }
-
-        .modal__campo {
-            margin-bottom: var(--gap-md);
-        }
-
+        .modal__campo { margin-bottom: 0.9rem; }
         .modal__label {
             display: block;
-            font-family: var(--fuente-titular);
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--on-surface-variant);
+            font-size: 0.52rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-on-variant);
             margin-bottom: 0.3rem;
         }
-
         .modal__sugerido {
-            font-weight: 400;
-            font-size: 0.6rem;
-            text-transform: none;
-            letter-spacing: normal;
-            color: var(--primary);
-            font-style: italic;
+            font-weight: 400; font-size: 0.5rem;
+            text-transform: none; letter-spacing: normal;
+            color: var(--ck-accent); font-style: italic;
         }
-
         .modal__input, .modal__select {
-            width: 100%;
-            padding: 0.5rem 0.7rem;
-            border: 1px solid var(--surface-container-high);
-            border-radius: var(--radio-md);
-            background: var(--surface-container);
-            font-family: var(--fuente-cuerpo);
-            font-size: 0.9rem;
-            color: var(--on-surface);
-            box-sizing: border-box;
+            width: 100%; box-sizing: border-box;
+            background: var(--ck-bg3); border: 1px solid var(--ck-line);
+            color: var(--ck-on-surface);
+            font-family: var(--ck-fuente); font-size: 0.72rem;
+            padding: 0.45rem 0.6rem;
         }
-
         .modal__input:focus, .modal__select:focus {
-            outline: none;
-            border-color: var(--primary);
+            outline: none; border-color: var(--ck-accent);
+        }
+        .modal__acciones { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+        /* ── Modal config ── */
+        .config-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 300;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .config-modal {
+            background: var(--ck-bg2); border: 1px solid var(--ck-line);
+            width: 90%; max-width: 500px; max-height: 80vh;
+            display: flex; flex-direction: column;
+        }
+        .config-modal__header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--ck-line);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .config-modal__titulo {
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--ck-on-surface); margin: 0;
+        }
+        .config-modal__cerrar {
+            background: none; border: none;
+            font-size: 1.2rem; color: var(--ck-on-variant); cursor: pointer;
+        }
+        .config-modal__cerrar:hover { color: var(--ck-on-surface); }
+        .config-modal__body {
+            padding: 1rem 1.25rem; overflow-y: auto; flex: 1;
+        }
+        .config-campo { margin-bottom: 1rem; }
+        .config-campo:last-child { margin-bottom: 0; }
+        .config-input {
+            width: 100%; box-sizing: border-box;
+            background: var(--ck-bg3); border: 1px solid var(--ck-line);
+            color: var(--ck-on-surface);
+            font-family: var(--ck-fuente); font-size: 0.72rem;
+            padding: 0.45rem 0.6rem; margin-top: 0.3rem;
+        }
+        .config-input:focus { outline: none; border-color: var(--ck-accent); }
+        .modal__help { display: block; font-size: 0.6rem; color: var(--ck-on-variant); margin-top: 0.2rem; }
+        .config-error { color: var(--ck-danger); font-size: 0.6rem; margin-top: 0.2rem; }
+        .config-modal__footer {
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--ck-line);
+            display: flex; gap: 0.5rem; justify-content: flex-end;
         }
 
-        .modal__acciones {
-            display: flex;
-            gap: var(--gap-sm);
-            justify-content: flex-end;
-            margin-top: var(--gap-lg);
-        }
-
-        @media (max-width: 600px) {
-            .redo-resumen {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .timeline-fila {
-                grid-template-columns: 120px 1fr;
-            }
-            .timeline-cabecera {
-                grid-template-columns: 120px 1fr;
-            }
-        }
-
-        /* ── Tabla responsive: tarjetas en movil ── */
+        /* ── Tabla responsive → tarjetas en móvil ── */
         @media (max-width: 768px) {
-            .hogar-tabla-wrap {
-                background: none;
-                box-shadow: none;
-                overflow: visible;
-            }
-
-            .hogar-tabla thead {
-                display: none;
-            }
-
-            .hogar-tabla tbody tr {
+            .redo-tabla-wrap { background: none; overflow: visible; }
+            .redo-tabla thead { display: none; }
+            .redo-tabla tbody tr {
                 display: block;
-                background: var(--surface-container-lowest);
-                border-radius: var(--radio-xl);
-                padding: var(--gap-md);
-                margin-bottom: var(--gap-md);
-                box-shadow: var(--sombra-sm);
+                background: var(--ck-bg2); border: 1px solid var(--ck-line);
+                padding: 0.75rem; margin-bottom: 0.5rem;
             }
-
-            .hogar-tabla tbody td {
-                display: flex;
-                justify-content: space-between;
+            .redo-tabla tbody td {
+                display: flex; justify-content: space-between;
                 align-items: baseline;
-                padding: 0.4rem 0;
-                border-top: none;
-                border-bottom: 1px solid var(--surface-container);
-                word-break: break-word;
-                min-width: 0;
+                padding: 0.3rem 0;
+                border-top: none; border-bottom: 1px solid var(--ck-line);
+                word-break: break-word; min-width: 0;
             }
-
-            .hogar-tabla tbody td:last-child {
-                border-bottom: none;
-                padding-top: 0.6rem;
-                justify-content: flex-end;
-                gap: var(--gap-sm);
-                flex-wrap: wrap;
+            .redo-tabla tbody td:last-child {
+                border-bottom: none; padding-top: 0.5rem;
+                justify-content: flex-end; gap: 0.35rem; flex-wrap: wrap;
             }
-
-            .hogar-tabla tbody td::before {
+            .redo-tabla tbody td::before {
                 content: attr(data-label);
-                font-family: var(--fuente-titular);
-                font-size: 0.68rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                color: var(--on-surface-variant);
-                flex-shrink: 0;
-                margin-right: var(--gap-md);
-                min-width: 5.5rem;
+                font-size: 0.48rem; font-weight: 700;
+                text-transform: uppercase; letter-spacing: 0.15em;
+                color: var(--ck-on-variant);
+                flex-shrink: 0; margin-right: 0.75rem; min-width: 4.5rem;
             }
-
-            .hogar-tabla tbody td:last-child::before {
-                content: none;
-            }
-
-            .fecha-col {
-                white-space: normal;
-            }
-
-            .btn-accion {
-                padding: 0.45rem 0.8rem;
-                font-size: 0.75rem;
-            }
-
-            .nombre-disp, .hostname {
-                text-align: right;
-            }
+            .redo-tabla tbody td:last-child::before { content: none; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ======== EFECTO LUMINA ======== -->
-    <div class="hogar-lumina"></div>
-
-    <!-- ======== HEADER FLOTANTE ======== -->
-    <header class="hogar-header">
-        <div class="hogar-header__barra">
-            <a href="/" class="hogar-header__marca">
-                <span class="material-symbols-outlined filled hogar-header__icono-marca">bubble_chart</span>
-                <div>
-                    <div class="hogar-header__titulo">ReDo</div>
-                    <div class="hogar-header__subtitulo">Red Domestica</div>
-                </div>
+    <!-- ======== HEADER ======== -->
+    <header class="ck-header">
+        <div class="ck-hdr-izq">
+            <a href="#" onclick="window.location=window.location.origin;return false"
+               class="ck-marca-box" style="text-decoration:none">
+                <div class="ck-marca-dot"></div>
             </a>
-            <button class="hogar-header__menu-btn" id="btnMenu">
-                <span class="material-symbols-outlined">menu</span>
+            <div>
+                <div class="ck-marca-txt">HOGAR<span>OS</span></div>
+                <div class="ck-marca-sub">red doméstica</div>
+            </div>
+            <div class="ck-sep"></div>
+            <span style="font-size:0.75rem;font-weight:700;color:var(--ck-accent);letter-spacing:0.15em;flex-shrink:0">REDO</span>
+            <div class="ck-sep redo-desktop-only"></div>
+            <nav class="ck-nav redo-desktop-only">
+                <button id="tab-btn-dispositivos" class="activo" onclick="cambiarTab('dispositivos')">DISPOSITIVOS</button>
+                <button id="tab-btn-presencia" onclick="cambiarTab('presencia')">PRESENCIA</button>
+                <button id="tab-btn-historial" onclick="cambiarTab('historial')">HISTORIAL</button>
+                <button id="tab-btn-config" onclick="cambiarTab('config')">CONFIG</button>
+            </nav>
+        </div>
+        <div class="ck-hdr-der">
+            <button id="redo-tema-btn" class="ck-tema-btn" title="Cambiar tema">
+                <span id="redo-tema-icono" class="material-symbols-outlined" style="font-size:1rem">light_mode</span>
+            </button>
+            <div class="ck-reloj">
+                <div class="ck-reloj__hora" id="redo-reloj-hora">--:--:--</div>
+                <div class="ck-reloj__fecha" id="redo-reloj-fecha"></div>
+            </div>
+            <button class="ck-tema-btn redo-mobile-only" id="btnMenuMobile">
+                <span class="material-symbols-outlined" style="font-size:1.2rem">menu</span>
             </button>
         </div>
     </header>
 
-    <!-- ======== DRAWER DE NAVEGACION ======== -->
-    <div class="hogar-drawer-overlay oculto" id="drawerOverlay"></div>
-    <nav class="hogar-drawer oculto" id="drawerNav">
-        <button class="hogar-drawer__cerrar" id="btnCerrarDrawer">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-        <span class="hogar-drawer__titulo">Navegacion</span>
-        <a href="/red/" class="hogar-drawer__enlace hogar-drawer__enlace--activo">
-            <span class="material-symbols-outlined">lan</span>
-            <span>Red</span>
-        </a>
-        <div class="hogar-drawer__separador"></div>
-        <button class="hogar-drawer__enlace" onclick="window.location=window.location.origin+'/finanzas/'">
-            <span class="material-symbols-outlined">payments</span>
-            <span>Finanzas</span>
-        </button>
-        <button class="hogar-drawer__enlace" onclick="window.location=window.location.origin+'/salud/'">
-            <span class="material-symbols-outlined">monitor_heart</span>
-            <span>Salud</span>
-        </button>
-        <div class="hogar-drawer__separador"></div>
-        <button class="hogar-drawer__enlace" onclick="window.location=window.location.origin">
-            <span class="material-symbols-outlined">roofing</span>
-            <span>Ir al Portal</span>
-        </button>
-        <button class="hogar-drawer__enlace" id="btnTema">
-            <span class="material-symbols-outlined" id="iconoTema">dark_mode</span>
-            <span>Cambiar tema</span>
-        </button>
+    <!-- ======== DRAWER MÓVIL ======== -->
+    <div class="redo-drawer-overlay redo-mobile-only" id="drawerOverlay" style="display:none"
+         onclick="cerrarDrawer()"></div>
+    <nav class="redo-drawer redo-mobile-only" id="drawerNav">
+        <button class="redo-drawer__cerrar" onclick="cerrarDrawer()">&times;</button>
+        <button class="redo-drawer__item redo-drawer__item--activo" id="drawer-dispositivos"
+                onclick="cambiarTab('dispositivos');cerrarDrawer()">DISPOSITIVOS</button>
+        <button class="redo-drawer__item" id="drawer-presencia"
+                onclick="cambiarTab('presencia');cerrarDrawer()">PRESENCIA</button>
+        <button class="redo-drawer__item" id="drawer-historial"
+                onclick="cambiarTab('historial');cerrarDrawer()">HISTORIAL</button>
+        <button class="redo-drawer__item" id="drawer-config"
+                onclick="cambiarTab('config');cerrarDrawer()">CONFIG</button>
+        <div class="redo-drawer__sep"></div>
+        <button class="redo-drawer__item"
+                onclick="window.location=window.location.origin+'/finanzas/'">FINANZAS</button>
+        <button class="redo-drawer__item"
+                onclick="window.location=window.location.origin+'/salud/'">SALUD</button>
+        <button class="redo-drawer__item"
+                onclick="window.location=window.location.origin">PORTAL</button>
+        <div class="redo-drawer__sep"></div>
+        <button class="redo-drawer__item" id="redo-tema-btn-mobile">TEMA</button>
     </nav>
 
-    <!-- ======== MODAL DE EDICION ======== -->
+    <!-- ======== MODAL EDICIÓN ======== -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal__titulo" id="modalTitulo">Editar dispositivo</div>
             <input type="hidden" id="modalId">
             <div class="modal__campo">
                 <label class="modal__label" for="modalNombre">Nombre</label>
-                <input class="modal__input" id="modalNombre" type="text" placeholder="Ej: Movil Lucia, Impresora HP...">
+                <input class="modal__input" id="modalNombre" type="text"
+                       placeholder="Ej: Móvil Lucía, Impresora HP...">
             </div>
             <div class="modal__campo">
-                <label class="modal__label" for="modalTipo">Tipo <span id="modalTipoAuto" class="modal__sugerido"></span></label>
-                <select class="modal__select" id="modalTipo">
-                    <!-- Se puebla dinamicamente desde /api/tipos -->
-                </select>
+                <label class="modal__label" for="modalTipo">
+                    Tipo <span id="modalTipoAuto" class="modal__sugerido"></span>
+                </label>
+                <select class="modal__select" id="modalTipo"></select>
             </div>
             <div class="modal__campo">
                 <label class="modal__label" for="modalZona">Zona</label>
-                <input class="modal__input" id="modalZona" type="text" list="listaZonas" placeholder="Ej: Salon, Despacho, Cocina...">
+                <input class="modal__input" id="modalZona" type="text"
+                       list="listaZonas" placeholder="Ej: Salón, Despacho, Cocina...">
                 <datalist id="listaZonas"></datalist>
             </div>
             <div class="modal__acciones">
-                <button class="hogar-boton" id="modalCancelar">Cancelar</button>
-                <button class="hogar-boton hogar-boton--primario" id="modalGuardar">Guardar</button>
+                <button class="redo-btn" id="modalCancelar">CANCELAR</button>
+                <button class="redo-btn redo-btn--accent" id="modalGuardar">GUARDAR</button>
             </div>
         </div>
     </div>
 
-    <main class="hogar-contenedor">
+    <!-- ======== MODAL CONFIGURACIÓN ======== -->
+    <div class="config-modal-overlay" id="configModalOverlay" style="display:none">
+        <div class="config-modal">
+            <div class="config-modal__header">
+                <h2 class="config-modal__titulo">Configuración del sistema</h2>
+                <button class="config-modal__cerrar" id="btnCerrarConfigModal">✕</button>
+            </div>
+            <div class="config-modal__body" id="configModalBody">
+                <div class="sin-datos">Cargando configuración...</div>
+            </div>
+            <div class="config-modal__footer">
+                <button class="redo-btn" id="btnCancelarConfigModal">CANCELAR</button>
+                <button class="redo-btn redo-btn--accent" id="btnGuardarConfigModal">GUARDAR</button>
+            </div>
+        </div>
+    </div>
 
-        <!-- Resumen -->
-        <div class="redo-resumen">
-            <div class="redo-resumen-tarjeta">
-                <div class="redo-resumen-tarjeta__label">Activos</div>
-                <div class="redo-resumen-tarjeta__valor" id="numActivos">-</div>
+    <!-- ======== CONTENIDO PRINCIPAL ======== -->
+    <main class="redo-main">
+
+        <!-- KPIs -->
+        <div class="redo-kpis">
+            <div class="redo-kpi">
+                <div class="redo-kpi__label">◈ Activos</div>
+                <div class="redo-kpi__val" id="numActivos">—</div>
             </div>
-            <div class="redo-resumen-tarjeta redo-resumen-tarjeta--ok">
-                <div class="redo-resumen-tarjeta__label">Confiables</div>
-                <div class="redo-resumen-tarjeta__valor" id="numConfiables">-</div>
+            <div class="redo-kpi">
+                <div class="redo-kpi__label">◈ Confiables</div>
+                <div class="redo-kpi__val redo-kpi__val--ok" id="numConfiables">—</div>
             </div>
-            <div class="redo-resumen-tarjeta redo-resumen-tarjeta--alerta">
-                <div class="redo-resumen-tarjeta__label">Desconocidos</div>
-                <div class="redo-resumen-tarjeta__valor" id="numDesconocidos">-</div>
+            <div class="redo-kpi">
+                <div class="redo-kpi__label">◈ Desconocidos</div>
+                <div class="redo-kpi__val redo-kpi__val--warn" id="numDesconocidos">—</div>
             </div>
-            <div class="redo-resumen-tarjeta redo-resumen-tarjeta--fecha">
-                <div class="redo-resumen-tarjeta__label">Ultimo escaneo</div>
-                <div class="redo-resumen-tarjeta__valor" id="ultimoEscaneo">-</div>
+            <div class="redo-kpi">
+                <div class="redo-kpi__label">◈ Último escaneo</div>
+                <div class="redo-kpi__val redo-kpi__val--fecha" id="ultimoEscaneo">—</div>
             </div>
         </div>
 
-        <!-- Pestanas -->
-        <div class="redo-tabs">
+        <!-- Pestañas (móvil) -->
+        <div class="redo-tabs redo-mobile-only" style="display:flex">
             <button class="redo-tab redo-tab--activo" data-tab="dispositivos">
-                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">devices</span>
+                <span class="material-symbols-outlined">devices</span>
                 Dispositivos
             </button>
             <button class="redo-tab" data-tab="presencia">
-                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">timeline</span>
+                <span class="material-symbols-outlined">timeline</span>
                 Presencia
             </button>
             <button class="redo-tab" data-tab="historial">
-                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">bar_chart</span>
+                <span class="material-symbols-outlined">bar_chart</span>
                 Historial
             </button>
             <button class="redo-tab" data-tab="config">
-                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">settings</span>
-                Configuración
+                <span class="material-symbols-outlined">settings</span>
+                Config
             </button>
         </div>
 
         <!-- ======== PANEL: DISPOSITIVOS ======== -->
         <div class="redo-panel redo-panel--activo" id="panelDispositivos">
-
-            <!-- Filtros -->
             <div class="redo-filtros">
-                <button class="redo-filtro-btn redo-filtro-btn--activo" data-filtro="todos">Todos</button>
-                <button class="redo-filtro-btn" data-filtro="confiable">Confiables</button>
-                <button class="redo-filtro-btn" data-filtro="desconocido">Desconocidos</button>
-                <select class="redo-filtro-select" id="filtroTipo">
-                    <option value="">Tipo: Todos</option>
-                    <!-- Se puebla dinamicamente desde /api/tipos -->
+                <button class="redo-filtro-btn redo-filtro-btn--activo" data-filtro="todos">TODOS</button>
+                <button class="redo-filtro-btn" data-filtro="confiable">CONFIABLES</button>
+                <button class="redo-filtro-btn" data-filtro="desconocido">DESCONOCIDOS</button>
+                <select class="redo-select" id="filtroTipo">
+                    <option value="">TIPO: TODOS</option>
                 </select>
-                <select class="redo-filtro-select" id="filtroZona">
-                    <option value="">Zona: Todas</option>
+                <select class="redo-select" id="filtroZona">
+                    <option value="">ZONA: TODAS</option>
                 </select>
-                <button class="hogar-boton hogar-boton--primario redo-btn-escanear" id="btnEscanear">
-                    <span class="material-symbols-outlined" style="font-size:1rem">radar</span>
-                    Escanear ahora
+                <button class="redo-btn redo-btn--accent redo-btn-escanear" id="btnEscanear">
+                    <span class="material-symbols-outlined">radar</span>
+                    ESCANEAR
                 </button>
-                <button class="hogar-boton redo-btn-descargar" id="btnDescargar" title="Descargar dispositivos">
-                    <span class="material-symbols-outlined" style="font-size:1rem">download</span>
-                    Descargar
-                </button>
-                <div class="redo-dropdown-descargar" id="dropdownDescargar" style="display: none;">
-                    <a href="#" class="redo-dropdown-item" id="descargarCSV">📄 CSV</a>
-                    <a href="#" class="redo-dropdown-item" id="descargarJSON">📋 JSON</a>
+                <div class="redo-dropdown-wrap">
+                    <button class="redo-btn" id="btnDescargar">
+                        <span class="material-symbols-outlined">download</span>
+                        EXPORTAR
+                    </button>
+                    <div class="redo-dropdown" id="dropdownDescargar" style="display:none">
+                        <a href="#" id="descargarCSV">CSV</a>
+                        <a href="#" id="descargarJSON">JSON</a>
+                    </div>
                 </div>
-                <button class="hogar-boton" id="btnToggleVista" title="Cambiar vista">
-                    <span class="material-symbols-outlined" style="font-size:1rem">view_list</span>
-                    Vista: Lista
+                <button class="redo-btn" id="btnToggleVista">
+                    <span class="material-symbols-outlined">view_list</span>
+                    LISTA
                 </button>
             </div>
 
-            <!-- Tabla (vista lista) -->
-            <div class="hogar-tabla-wrap" id="vistaLista">
-                <table class="hogar-tabla">
+            <!-- Vista lista -->
+            <div class="redo-tabla-wrap" id="vistaLista">
+                <table class="redo-tabla">
                     <thead>
                         <tr>
                             <th></th>
@@ -1143,7 +819,7 @@
                             <th>Zona</th>
                             <th>Estado</th>
                             <th>Visto</th>
-                            <th>Accion</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody id="tablaDispositivos">
@@ -1152,16 +828,16 @@
                 </table>
             </div>
 
-            <!-- Vista agrupada por zona -->
-            <div id="vistaAgrupada" style="display: none; padding: var(--gap-lg) 0;"></div>
+            <!-- Vista agrupada -->
+            <div id="vistaAgrupada" style="display:none; padding: 0.5rem 0;"></div>
         </div>
 
         <!-- ======== PANEL: PRESENCIA ======== -->
         <div class="redo-panel" id="panelPresencia">
-            <div class="timeline-controles">
-                <label class="modal__label" style="margin-bottom:0">Fecha:</label>
-                <input type="date" class="timeline-fecha" id="timelineFecha">
-                <button class="hogar-boton" id="timelineHoy">Hoy</button>
+            <div class="redo-controles">
+                <span class="redo-label">Fecha:</span>
+                <input type="date" class="redo-input-date" id="timelineFecha">
+                <button class="redo-btn" id="timelineHoy">HOY</button>
             </div>
             <div class="timeline-container" id="timelineContainer">
                 <div class="timeline-vacio">Selecciona una fecha para ver la presencia</div>
@@ -1169,51 +845,33 @@
             <div class="detalle-presencia" id="detallePresencia"></div>
         </div>
 
-        <!-- ======== PANEL: HISTORIAL ESCANEOS ======== -->
+        <!-- ======== PANEL: HISTORIAL ======== -->
         <div class="redo-panel" id="panelHistorial">
-            <div class="historial-controles">
-                <label class="modal__label" style="margin-bottom:0">Período (días):</label>
-                <select class="redo-filtro-select" id="filtroHistorialDias">
-                    <option value="7">Últimos 7 días</option>
-                    <option value="30" selected>Últimos 30 días</option>
-                    <option value="90">Últimos 90 días</option>
-                    <option value="180">Últimos 6 meses</option>
+            <div class="redo-controles">
+                <span class="redo-label">Período:</span>
+                <select class="redo-select" id="filtroHistorialDias">
+                    <option value="7">7 DÍAS</option>
+                    <option value="30" selected>30 DÍAS</option>
+                    <option value="90">90 DÍAS</option>
+                    <option value="180">6 MESES</option>
                 </select>
-                <button class="hogar-boton" id="btnCargarHistorial" style="margin-left: auto;">Cargar</button>
+                <button class="redo-btn" id="btnCargarHistorial" style="margin-left:auto">CARGAR</button>
             </div>
             <div class="historial-grafico" id="historialGrafico">
                 <div class="sin-datos">Cargando datos de escaneos...</div>
             </div>
-            <div class="historial-datos" id="historialDatos"></div>
+            <div class="historial-tabla" id="historialDatos"></div>
         </div>
 
-        <!-- ======== PANEL: CONFIGURACION ======== -->
+        <!-- ======== PANEL: CONFIGURACIÓN ======== -->
         <div class="redo-panel" id="panelConfig">
-            <p style="margin-bottom: var(--gap-lg); color: var(--on-surface-variant);">
-                ⚙️ Parámetros de configuración del sistema.
-            </p>
-            <button class="hogar-boton hogar-boton--primario" id="btnAbrirConfigModal" style="margin-bottom: var(--gap-lg);">
-                <span class="material-symbols-outlined" style="font-size:1rem">edit</span>
-                Editar configuración
-            </button>
-            <div id="configResumen" style="color: var(--on-surface-variant); font-size: 0.9rem; line-height: 1.6;"></div>
-        </div>
-
-        <!-- ======== MODAL: CONFIGURACION ======== -->
-        <div class="config-modal-overlay" id="configModalOverlay" style="display: none;">
-            <div class="config-modal">
-                <div class="config-modal__header">
-                    <h2 class="config-modal__titulo">⚙️ Configuración del sistema</h2>
-                    <button class="config-modal__cerrar" id="btnCerrarConfigModal">✕</button>
-                </div>
-                <div class="config-modal__body" id="configModalBody">
-                    <div class="sin-datos">Cargando configuración...</div>
-                </div>
-                <div class="config-modal__footer">
-                    <button class="hogar-boton" id="btnCancelarConfigModal">CANCELAR</button>
-                    <button class="hogar-boton hogar-boton--primario" id="btnGuardarConfigModal">GUARDAR</button>
-                </div>
+            <div style="margin-bottom:1rem">
+                <button class="redo-btn redo-btn--accent" id="btnAbrirConfigModal">
+                    <span class="material-symbols-outlined">edit</span>
+                    EDITAR CONFIGURACIÓN
+                </button>
             </div>
+            <div id="configResumen" class="config-resumen"></div>
         </div>
 
     </main>
@@ -1237,52 +895,7 @@
         };
 
         /* ============================================================
-           Drawer de navegacion
-           ============================================================ */
-        var drawer = document.getElementById("drawerNav");
-        var overlay = document.getElementById("drawerOverlay");
-
-        function toggleDrawer() {
-            drawer.classList.toggle("oculto");
-            overlay.classList.toggle("oculto");
-        }
-
-        document.getElementById("btnMenu").addEventListener("click", toggleDrawer);
-        document.getElementById("drawerOverlay").addEventListener("click", toggleDrawer);
-        document.getElementById("btnCerrarDrawer").addEventListener("click", toggleDrawer);
-        document.addEventListener("keydown", function(e) {
-            if (e.key === "Escape" && !drawer.classList.contains("oculto")) toggleDrawer();
-        });
-
-        /* ============================================================
-           Toggle tema claro/oscuro
-           ============================================================ */
-        (function initTema() {
-            if (localStorage.getItem("hogar-tema") === "oscuro") {
-                document.documentElement.setAttribute("data-tema", "oscuro");
-            }
-            actualizarIconoTema();
-        })();
-
-        document.getElementById("btnTema").addEventListener("click", function() {
-            var oscuro = document.documentElement.getAttribute("data-tema") === "oscuro";
-            if (oscuro) {
-                document.documentElement.removeAttribute("data-tema");
-                localStorage.setItem("hogar-tema", "claro");
-            } else {
-                document.documentElement.setAttribute("data-tema", "oscuro");
-                localStorage.setItem("hogar-tema", "oscuro");
-            }
-            actualizarIconoTema();
-        });
-
-        function actualizarIconoTema() {
-            var oscuro = document.documentElement.getAttribute("data-tema") === "oscuro";
-            document.getElementById("iconoTema").textContent = oscuro ? "light_mode" : "dark_mode";
-        }
-
-        /* ============================================================
-           Prefijo y estado
+           Prefijo BASE (autodetección de ruta bajo proxy)
            ============================================================ */
         var BASE = (function() {
             var ruta = window.location.pathname;
@@ -1291,34 +904,112 @@
             return '';
         })();
 
+        /* ============================================================
+           Reloj
+           ============================================================ */
+        function tickReloj() {
+            var now = new Date();
+            var hora = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            var fecha = now.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+            document.getElementById('redo-reloj-hora').textContent = hora;
+            document.getElementById('redo-reloj-fecha').textContent = fecha;
+        }
+        tickReloj();
+        setInterval(tickReloj, 1000);
+
+        /* ============================================================
+           Toggle tema claro/oscuro (Cockpit)
+           ============================================================ */
+        (function initTema() {
+            var guardado = localStorage.getItem('hogar-cockpit-tema') || 'dark';
+            document.documentElement.setAttribute('data-tema-cockpit', guardado);
+            actualizarIconoTema();
+        })();
+
+        function actualizarIconoTema() {
+            var tema = document.documentElement.getAttribute('data-tema-cockpit');
+            var icono = document.getElementById('redo-tema-icono');
+            if (icono) icono.textContent = tema === 'dark' ? 'light_mode' : 'dark_mode';
+        }
+
+        function toggleTema() {
+            var actual = document.documentElement.getAttribute('data-tema-cockpit');
+            var nuevo = actual === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-tema-cockpit', nuevo);
+            localStorage.setItem('hogar-cockpit-tema', nuevo);
+            actualizarIconoTema();
+        }
+
+        document.getElementById('redo-tema-btn').addEventListener('click', toggleTema);
+        document.getElementById('redo-tema-btn-mobile').addEventListener('click', toggleTema);
+
+        /* ============================================================
+           Drawer móvil
+           ============================================================ */
+        function abrirDrawer() {
+            document.getElementById('drawerNav').classList.add('redo-drawer--abierto');
+            document.getElementById('drawerOverlay').style.display = 'block';
+        }
+        function cerrarDrawer() {
+            document.getElementById('drawerNav').classList.remove('redo-drawer--abierto');
+            document.getElementById('drawerOverlay').style.display = 'none';
+        }
+        document.getElementById('btnMenuMobile').addEventListener('click', abrirDrawer);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') cerrarDrawer();
+        });
+
+        /* ============================================================
+           Pestañas — cambio de panel
+           ============================================================ */
+        var tabActiva = 'dispositivos';
+
+        function cambiarTab(nombre) {
+            tabActiva = nombre;
+
+            // Botones header desktop
+            document.querySelectorAll('.ck-nav button[id^="tab-btn-"]').forEach(function(b) {
+                b.classList.remove('activo');
+            });
+            var btnDesktop = document.getElementById('tab-btn-' + nombre);
+            if (btnDesktop) btnDesktop.classList.add('activo');
+
+            // Tabs móvil
+            document.querySelectorAll('.redo-tab').forEach(function(t) {
+                t.classList.toggle('redo-tab--activo', t.getAttribute('data-tab') === nombre);
+            });
+
+            // Items drawer móvil
+            document.querySelectorAll('.redo-drawer__item[id^="drawer-"]').forEach(function(i) {
+                i.classList.toggle('redo-drawer__item--activo', i.id === 'drawer-' + nombre);
+            });
+
+            // Paneles
+            document.querySelectorAll('.redo-panel').forEach(function(p) {
+                p.classList.remove('redo-panel--activo');
+            });
+            document.getElementById('panel' + nombre.charAt(0).toUpperCase() + nombre.slice(1))
+                .classList.add('redo-panel--activo');
+
+            if (nombre === 'presencia') cargarTimeline();
+            if (nombre === 'historial') cargarHistorial();
+            if (nombre === 'config') cargarConfiguracion();
+        }
+
+        // Tabs móvil (data-tab)
+        document.querySelectorAll('.redo-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                cambiarTab(this.getAttribute('data-tab'));
+            });
+        });
+
+        /* ============================================================
+           Estado de filtros
+           ============================================================ */
         var filtroConfiable = 'todos';
         var filtroTipo = '';
         var filtroZona = '';
-        var vistaAgrupada = false;
-
-        /* ============================================================
-           Pestanas Dispositivos / Presencia
-           ============================================================ */
-        document.querySelectorAll('.redo-tab').forEach(function(tab) {
-            tab.addEventListener('click', function() {
-                var destino = this.getAttribute('data-tab');
-                document.querySelectorAll('.redo-tab').forEach(function(t) {
-                    t.classList.remove('redo-tab--activo');
-                });
-                this.classList.add('redo-tab--activo');
-                document.querySelectorAll('.redo-panel').forEach(function(p) {
-                    p.classList.remove('redo-panel--activo');
-                });
-                document.getElementById('panel' + destino.charAt(0).toUpperCase() + destino.slice(1))
-                    .classList.add('redo-panel--activo');
-
-                if (destino === 'presencia') cargarTimeline();
-                if (destino === 'historial') cargarHistorial();
-                if (destino === 'config') {
-                    cargarConfiguracion();
-                }
-            });
-        });
+        var modoAgrupado = false;
 
         /* ============================================================
            Resumen
@@ -1336,26 +1027,22 @@
         }
 
         /* ============================================================
-           Cargar zonas para filtro y datalist
+           Zonas y tipos
            ============================================================ */
         function cargarZonas() {
             fetch(BASE + '/api/dispositivos/zonas')
                 .then(function(r) { return r.json(); })
                 .then(function(zonas) {
-                    var selectZona = document.getElementById('filtroZona');
-                    var valorActual = selectZona.value;
-                    selectZona.innerHTML = '<option value="">Zona: Todas</option>';
+                    var sel = document.getElementById('filtroZona');
+                    var val = sel.value;
+                    sel.innerHTML = '<option value="">ZONA: TODAS</option>';
                     zonas.forEach(function(z) {
-                        selectZona.innerHTML += '<option value="' + z + '">' + z + '</option>';
+                        sel.innerHTML += '<option value="' + z + '">' + z + '</option>';
                     });
-                    selectZona.value = valorActual;
-
-                    // Actualizar datalist del modal
-                    var datalist = document.getElementById('listaZonas');
-                    datalist.innerHTML = '';
-                    zonas.forEach(function(z) {
-                        datalist.innerHTML += '<option value="' + z + '">';
-                    });
+                    sel.value = val;
+                    var dl = document.getElementById('listaZonas');
+                    dl.innerHTML = '';
+                    zonas.forEach(function(z) { dl.innerHTML += '<option value="' + z + '">'; });
                 });
         }
 
@@ -1363,26 +1050,19 @@
             fetch(BASE + '/api/tipos')
                 .then(function(r) { return r.json(); })
                 .then(function(tipos) {
-                    // Puebla #modalTipo (sin "Todos", todas las opciones)
-                    var selectModal = document.getElementById('modalTipo');
-                    selectModal.innerHTML = '';
+                    var selModal = document.getElementById('modalTipo');
+                    selModal.innerHTML = '';
                     tipos.forEach(function(t) {
-                        selectModal.innerHTML += '<option value="' + t.clave + '">' + t.nombre + '</option>';
+                        selModal.innerHTML += '<option value="' + t.clave + '">' + t.nombre + '</option>';
                     });
-
-                    // Puebla #filtroTipo ("Todos" + todas las opciones)
-                    var selectFiltro = document.getElementById('filtroTipo');
-                    var valorActual = selectFiltro.value;
-                    selectFiltro.innerHTML = '<option value="">Tipo: Todos</option>';
+                    var selFiltro = document.getElementById('filtroTipo');
+                    var val = selFiltro.value;
+                    selFiltro.innerHTML = '<option value="">TIPO: TODOS</option>';
                     tipos.forEach(function(t) {
-                        selectFiltro.innerHTML += '<option value="' + t.clave + '">' + t.nombre + '</option>';
+                        selFiltro.innerHTML += '<option value="' + t.clave + '">' + t.nombre + '</option>';
                     });
-                    selectFiltro.value = valorActual;
-
-                    // Actualizar TIPOS_ICONO dinámicamente (para iconos en tabla)
-                    tipos.forEach(function(t) {
-                        TIPOS_ICONO[t.clave] = t.icono;
-                    });
+                    selFiltro.value = val;
+                    tipos.forEach(function(t) { TIPOS_ICONO[t.clave] = t.icono; });
                 });
         }
 
@@ -1395,30 +1075,25 @@
             else if (filtroConfiable === 'desconocido') params.push('confiable=0');
             if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
             if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
-
-            var url = BASE + '/api/dispositivos';
-            if (params.length) url += '?' + params.join('&');
+            var url = BASE + '/api/dispositivos' + (params.length ? '?' + params.join('&') : '');
 
             fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(lista) {
-                    // Mostrar/ocultar vistas según vistaAgrupada
-                    document.getElementById('vistaLista').style.display = vistaAgrupada ? 'none' : 'block';
-                    document.getElementById('vistaAgrupada').style.display = vistaAgrupada ? 'block' : 'none';
+                    document.getElementById('vistaLista').style.display = modoAgrupado ? 'none' : 'block';
+                    document.getElementById('vistaAgrupada').style.display = modoAgrupado ? 'block' : 'none';
 
-                    if (lista.length === 0) {
-                        var contenedor = vistaAgrupada
+                    if (!lista.length) {
+                        var c = modoAgrupado
                             ? document.getElementById('vistaAgrupada')
                             : document.getElementById('tablaDispositivos');
-                        contenedor.innerHTML = '<div class="sin-datos">No hay dispositivos</div>';
+                        c.innerHTML = '<div class="sin-datos">No hay dispositivos</div>';
                         return;
                     }
 
-                    if (vistaAgrupada) {
-                        // Renderizar vista agrupada
+                    if (modoAgrupado) {
                         renderizarAgrupado(lista);
                     } else {
-                        // Renderizar vista lista (tabla)
                         var tbody = document.getElementById('tablaDispositivos');
                         tbody.innerHTML = lista.map(function(d) {
                             var esConfiable = d.confiable === 1;
@@ -1426,34 +1101,33 @@
                             var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
 
                             var info = '';
-                            if (nombre) info += '<strong class="nombre-disp">' + nombre + '</strong><br>';
-                            info += '<span class="hostname">' + d.mac + '</span>';
-                            if (d.fabricante) info += '<br><span class="hostname">' + d.fabricante + '</span>';
-                            if (d.hostname) info += ' · <span class="hostname">' + d.hostname + '</span>';
+                            if (nombre) info += '<strong class="redo-nombre">' + nombre + '</strong><br>';
+                            info += '<span class="redo-mac">' + d.mac + '</span>';
+                            if (d.fabricante) info += '<br><span class="redo-fabricante">' + d.fabricante + '</span>';
+                            if (d.hostname) info += ' · <span class="redo-fabricante">' + d.hostname + '</span>';
 
                             var zonaHtml = d.zona
-                                ? '<span class="zona-badge">' + d.zona + '</span>'
-                                : '<span class="hostname">—</span>';
+                                ? '<span class="redo-zona-badge">' + d.zona + '</span>'
+                                : '<span class="redo-mac">—</span>';
 
-                            return '<tr data-id="' + d.id + '" data-mac="' + d.mac + '" data-nombre="' + (nombre).replace(/"/g, '&quot;') + '" data-tipo="' + d.tipo + '">' +
-                                '<td data-label="Tipo"><span class="material-symbols-outlined icono-tipo" title="' + d.tipo + '">' + icono + '</span></td>' +
-                                '<td data-label="IP"><strong>' + (d.ip || '?') + '</strong></td>' +
+                            return '<tr data-id="' + d.id + '" data-mac="' + d.mac + '" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" data-tipo="' + d.tipo + '">' +
+                                '<td data-label="Tipo"><span class="material-symbols-outlined redo-icono-tipo" title="' + d.tipo + '">' + icono + '</span></td>' +
+                                '<td data-label="IP"><strong class="redo-ip">' + (d.ip || '?') + '</strong></td>' +
                                 '<td data-label="Dispositivo">' + info + '</td>' +
                                 '<td data-label="Zona">' + zonaHtml + '</td>' +
-                                '<td data-label="Estado"><span class="hogar-badge ' +
-                                    (esConfiable ? 'hogar-badge--exito' : 'hogar-badge--peligro') + '">' +
-                                    (esConfiable ? 'Confiable' : 'Desconocido') + '</span></td>' +
-                                '<td data-label="Visto" class="fecha-col">' + formatearFecha(d.ultima_vez) + '</td>' +
+                                '<td data-label="Estado"><span class="redo-badge ' + (esConfiable ? 'redo-badge--ok' : 'redo-badge--warn') + '">' +
+                                    (esConfiable ? 'CONFIABLE' : 'DESCONOCIDO') + '</span></td>' +
+                                '<td data-label="Visto" class="redo-fecha">' + formatearFecha(d.ultima_vez) + '</td>' +
                                 '<td>' +
-                                    '<button class="btn-accion btn-accion--nombre" onclick="abrirModal(' + d.id + ')" title="Editar">' +
-                                        '<span class="material-symbols-outlined" style="font-size:0.9rem">edit</span>' +
+                                    '<button class="redo-accion-btn" onclick="abrirModal(' + d.id + ')" title="Editar">' +
+                                        '<span class="material-symbols-outlined" style="font-size:0.85rem">edit</span>' +
                                     '</button> ' +
-                                    '<button class="btn-accion btn-accion--presencia" onclick="verPresencia(' + d.id + ')" title="Presencia">' +
-                                        '<span class="material-symbols-outlined" style="font-size:0.9rem">timeline</span>' +
+                                    '<button class="redo-accion-btn" onclick="verPresencia(' + d.id + ')" title="Presencia">' +
+                                        '<span class="material-symbols-outlined" style="font-size:0.85rem">timeline</span>' +
                                     '</button> ' +
                                     (esConfiable
-                                        ? '<button class="btn-accion btn-accion--desconocido" onclick="cambiarEstado(' + d.id + ', 0)">Desconocido</button>'
-                                        : '<button class="btn-accion btn-accion--confiable" onclick="cambiarEstado(' + d.id + ', 1)">Confiable</button>'
+                                        ? '<button class="redo-accion-btn redo-accion-btn--warn" onclick="cambiarEstado(' + d.id + ', 0)">DESCONOCIDO</button>'
+                                        : '<button class="redo-accion-btn redo-accion-btn--ok" onclick="cambiarEstado(' + d.id + ', 1)">CONFIABLE</button>'
                                     ) +
                                 '</td>' +
                             '</tr>';
@@ -1463,10 +1137,70 @@
         }
 
         /* ============================================================
-           Modal de edicion
+           Vista agrupada por tipo → zona
+           ============================================================ */
+        function renderizarAgrupado(dispositivos) {
+            var grupos = dispositivos.reduce(function(acc, d) {
+                var tipo = d.tipo || 'otro';
+                if (!acc[tipo]) acc[tipo] = {};
+                var zona = d.zona || 'Sin zona';
+                if (!acc[tipo][zona]) acc[tipo][zona] = [];
+                acc[tipo][zona].push(d);
+                return acc;
+            }, {});
+
+            var html = '';
+            Object.keys(grupos).sort().forEach(function(tipo) {
+                var icono = TIPOS_ICONO[tipo] || 'device_unknown';
+                var zonas = grupos[tipo];
+                var total = Object.values(zonas).reduce(function(s, a) { return s + a.length; }, 0);
+
+                html += '<div class="tipo-grupo">' +
+                    '<h2 class="tipo-titulo">' +
+                    '<span class="material-symbols-outlined">' + icono + '</span>' +
+                    tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' (' + total + ')</h2>';
+
+                Object.keys(zonas).sort().forEach(function(zona) {
+                    html += '<div class="zona-grupo">' +
+                        '<h3 class="zona-titulo">◈ ' + zona + ' (' + zonas[zona].length + ')</h3>' +
+                        '<div class="zona-dispositivos">';
+
+                    html += zonas[zona].map(function(d) {
+                        var ico = TIPOS_ICONO[d.tipo] || 'device_unknown';
+                        var nom = d.notas || 'Sin nombre';
+                        var esConf = d.confiable === 1;
+                        var badge = esConf
+                            ? '<span class="redo-badge redo-badge--ok">CONFIABLE</span>'
+                            : '<span class="redo-badge redo-badge--warn">DESCONOCIDO</span>';
+
+                        return '<div class="disp-tarjeta">' +
+                            '<div class="disp-tarjeta__tipo"><span class="material-symbols-outlined">' + ico + '</span></div>' +
+                            '<div class="disp-tarjeta__nombre">' + nom + '</div>' +
+                            '<div class="disp-tarjeta__mac">' + d.mac + '</div>' +
+                            '<div class="disp-tarjeta__info">' +
+                                '<strong>IP:</strong> ' + (d.ip || '?') +
+                                (d.hostname ? '<br><strong>Host:</strong> ' + d.hostname : '') +
+                            '</div>' +
+                            badge +
+                            '<div class="disp-tarjeta__acciones">' +
+                                '<button class="redo-accion-btn" onclick="abrirModal(' + d.id + ')">EDITAR</button>' +
+                                '<button class="redo-accion-btn" onclick="verPresencia(' + d.id + ')">PRESENCIA</button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+
+                    html += '</div></div>';
+                });
+                html += '</div>';
+            });
+
+            document.getElementById('vistaAgrupada').innerHTML = html;
+        }
+
+        /* ============================================================
+           Modal de edición
            ============================================================ */
         function abrirModal(id) {
-            // Cargar datos del dispositivo
             fetch(BASE + '/api/dispositivos/' + id)
                 .then(function(r) { return r.json(); })
                 .then(function(d) {
@@ -1474,15 +1208,12 @@
                     document.getElementById('modalNombre').value = d.notas || '';
                     document.getElementById('modalTipo').value = d.tipo || 'otro';
                     document.getElementById('modalZona').value = d.zona || '';
-                    // Indicador de tipo sugerido por fabricante
                     var spanAuto = document.getElementById('modalTipoAuto');
-                    if (d.tipo_auto) {
-                        spanAuto.textContent = '(sugerido por fabricante: ' + (d.fabricante || '?') + ')';
-                    } else {
-                        spanAuto.textContent = '';
-                    }
+                    spanAuto.textContent = d.tipo_auto
+                        ? '(sugerido: ' + (d.fabricante || '?') + ')'
+                        : '';
                     document.getElementById('modalTitulo').textContent =
-                        'Editar: ' + (d.notas || d.mac);
+                        'EDITAR: ' + (d.notas || d.mac);
                     document.getElementById('modalOverlay').classList.add('modal-overlay--visible');
                 });
         }
@@ -1510,8 +1241,7 @@
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
-            })
-            .then(function() {
+            }).then(function() {
                 cerrarModal();
                 cargarDispositivos();
                 cargarResumen();
@@ -1520,183 +1250,102 @@
         });
 
         /* ============================================================
-           Cambiar estado (confiable/desconocido)
+           Cambiar estado (confiable / desconocido)
            ============================================================ */
         function cambiarEstado(id, confiable) {
             fetch(BASE + '/api/dispositivos/' + id, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ confiable: confiable })
-            })
-            .then(function() {
+            }).then(function() {
                 cargarDispositivos();
                 cargarResumen();
             });
         }
 
         /* ============================================================
-           Ver presencia de un dispositivo (cambia a pestana presencia)
+           Ver presencia de un dispositivo
            ============================================================ */
         function verPresencia(id) {
-            // Buscar nombre y tipo del dispositivo en la tabla actual
-            var nombre = id;
-            var tipo = 'otro';
-            var filas = document.querySelectorAll('#tablaDispositivos tr[data-mac]');
-            filas.forEach(function(fila) {
+            var nombre = id, tipo = 'otro';
+            document.querySelectorAll('#tablaDispositivos tr[data-mac]').forEach(function(fila) {
                 if (fila.getAttribute('data-id') === String(id)) {
                     nombre = fila.getAttribute('data-nombre') || id;
                     tipo = fila.getAttribute('data-tipo') || 'otro';
                 }
             });
-
-            // Cambiar a pestana presencia
-            document.querySelector('[data-tab="presencia"]').click();
-
-            // Cargar detalle del dispositivo
+            cambiarTab('presencia');
             cargarDetalleDispositivo(id, nombre, tipo);
         }
 
         /* ============================================================
-           Escanear
+           Escanear ahora
            ============================================================ */
         document.getElementById('btnEscanear').addEventListener('click', function() {
             var btn = this;
             btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">hourglass_top</span> Escaneando...';
+            btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> ESCANEANDO...';
             fetch(BASE + '/api/escanear', { method: 'POST' })
                 .then(function() {
-                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">check_circle</span> Listo';
+                    btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> LISTO';
                     setTimeout(function() {
                         btn.disabled = false;
-                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">radar</span> Escanear ahora';
+                        btn.innerHTML = '<span class="material-symbols-outlined">radar</span> ESCANEAR';
                         cargarResumen();
                         cargarDispositivos();
                     }, 3000);
                 })
                 .catch(function() {
                     btn.disabled = false;
-                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">radar</span> Escanear ahora';
+                    btn.innerHTML = '<span class="material-symbols-outlined">radar</span> ESCANEAR';
                 });
         });
 
         /* ============================================================
-           Descargar dispositivos
+           Descargar CSV / JSON
            ============================================================ */
         document.getElementById('btnDescargar').addEventListener('click', function(e) {
             e.preventDefault();
-            var dropdown = document.getElementById('dropdownDescargar');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            var dd = document.getElementById('dropdownDescargar');
+            dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
         });
 
-        // Cerrar dropdown cuando hace clic fuera
         document.addEventListener('click', function(e) {
-            var dropdown = document.getElementById('dropdownDescargar');
+            var dd = document.getElementById('dropdownDescargar');
             var btn = document.getElementById('btnDescargar');
-            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
-                dropdown.style.display = 'none';
-            }
+            if (!dd.contains(e.target) && !btn.contains(e.target)) dd.style.display = 'none';
         });
 
-        // Manejar descargas
+        function buildExportUrl(ext) {
+            var params = [];
+            if (filtroConfiable === 'confiable') params.push('confiable=1');
+            else if (filtroConfiable === 'desconocido') params.push('confiable=0');
+            if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
+            if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
+            return BASE + '/api/dispositivos/exportar/' + ext + (params.length ? '?' + params.join('&') : '');
+        }
+
         document.getElementById('descargarCSV').addEventListener('click', function(e) {
             e.preventDefault();
-            var params = [];
-            if (filtroConfiable === 'confiable') params.push('confiable=1');
-            else if (filtroConfiable === 'desconocido') params.push('confiable=0');
-            if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
-            if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
-            var querystring = params.length ? '?' + params.join('&') : '';
-            window.location.href = BASE + '/api/dispositivos/exportar/csv' + querystring;
+            window.location.href = buildExportUrl('csv');
             document.getElementById('dropdownDescargar').style.display = 'none';
         });
-
         document.getElementById('descargarJSON').addEventListener('click', function(e) {
             e.preventDefault();
-            var params = [];
-            if (filtroConfiable === 'confiable') params.push('confiable=1');
-            else if (filtroConfiable === 'desconocido') params.push('confiable=0');
-            if (filtroTipo) params.push('tipo=' + encodeURIComponent(filtroTipo));
-            if (filtroZona) params.push('zona=' + encodeURIComponent(filtroZona));
-            var querystring = params.length ? '?' + params.join('&') : '';
-            window.location.href = BASE + '/api/dispositivos/exportar/json' + querystring;
+            window.location.href = buildExportUrl('json');
             document.getElementById('dropdownDescargar').style.display = 'none';
         });
 
         /* ============================================================
-           Vista agrupada por zona
+           Toggle vista lista / agrupada
            ============================================================ */
         document.getElementById('btnToggleVista').addEventListener('click', function() {
-            vistaAgrupada = !vistaAgrupada;
-            this.textContent = vistaAgrupada ? '📊 Vista: Agrupada' : '📋 Vista: Lista';
-            this.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem">' +
-                (vistaAgrupada ? 'dashboard' : 'view_list') + '</span> ' +
-                (vistaAgrupada ? 'Vista: Agrupada' : 'Vista: Lista');
+            modoAgrupado = !modoAgrupado;
+            this.innerHTML = '<span class="material-symbols-outlined">' +
+                (modoAgrupado ? 'dashboard' : 'view_list') + '</span> ' +
+                (modoAgrupado ? 'AGRUPADA' : 'LISTA');
             cargarDispositivos();
         });
-
-        function renderizarAgrupado(dispositivos) {
-            // Agrupar por tipo, luego por zona (estructura jerárquica)
-            var gruposPorTipo = dispositivos.reduce(function(acc, d) {
-                var tipo = d.tipo || 'otro';
-                if (!acc[tipo]) acc[tipo] = {};
-
-                var zona = d.zona || 'Sin zona';
-                if (!acc[tipo][zona]) acc[tipo][zona] = [];
-                acc[tipo][zona].push(d);
-                return acc;
-            }, {});
-
-            // Renderizar agrupado por tipo → zona
-            var html = '';
-            Object.keys(gruposPorTipo).sort().forEach(function(tipo) {
-                var iconoTipo = TIPOS_ICONO[tipo] || 'device_unknown';
-                var zonas = gruposPorTipo[tipo];
-                var totalPorTipo = Object.values(zonas).reduce(function(sum, arr) { return sum + arr.length; }, 0);
-
-                html += '<div class="tipo-grupo">' +
-                    '<h2 class="tipo-titulo">' +
-                    '<span class="material-symbols-outlined" style="vertical-align:middle;margin-right:0.5rem">' + iconoTipo + '</span>' +
-                    tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' (' + totalPorTipo + ')</h2>';
-
-                // Renderizar zonas dentro de cada tipo
-                Object.keys(zonas).sort().forEach(function(zona) {
-                    var dispositivosZona = zonas[zona];
-                    html += '<div class="zona-grupo">' +
-                        '<h3 class="zona-titulo">📍 ' + zona + ' (' + dispositivosZona.length + ')</h3>' +
-                        '<div class="zona-dispositivos">';
-
-                    html += dispositivosZona.map(function(d) {
-                        var icono = TIPOS_ICONO[d.tipo] || 'device_unknown';
-                        var nombre = d.notas || 'Sin nombre';
-                        var esConfiable = d.confiable === 1;
-                        var badge = esConfiable ? '<span class="dispositivo-tarjeta__estado" style="background:var(--exito-fondo);color:var(--exito)">✓ Confiable</span>' : '<span class="dispositivo-tarjeta__estado" style="background:var(--peligro-fondo);color:var(--peligro)">? Desconocido</span>';
-
-                        return '<div class="dispositivo-tarjeta">' +
-                            '<div class="dispositivo-tarjeta__tipo">' +
-                                '<span class="material-symbols-outlined" title="' + d.tipo + '">' + icono + '</span>' +
-                            '</div>' +
-                            '<div class="dispositivo-tarjeta__nombre">' + nombre + '</div>' +
-                            '<div class="dispositivo-tarjeta__mac">' + d.mac + '</div>' +
-                            '<div class="dispositivo-tarjeta__info">' +
-                                '<strong>IP:</strong> ' + (d.ip || '?') + '<br>' +
-                                (d.hostname ? '<strong>Host:</strong> ' + d.hostname : '') +
-                            '</div>' +
-                            badge +
-                            '<div class="dispositivo-tarjeta__acciones">' +
-                                '<button class="dispositivo-tarjeta__btn" onclick="abrirModal(' + d.id + ')" title="Editar">✏️ Editar</button>' +
-                                '<button class="dispositivo-tarjeta__btn" onclick="verPresencia(' + d.id + ')" title="Presencia">📅 Presencia</button>' +
-                            '</div>' +
-                        '</div>';
-                    }).join('');
-
-                    html += '</div></div>';
-                });
-
-                html += '</div>';
-            });
-
-            document.getElementById('vistaAgrupada').innerHTML = html;
-        }
 
         /* ============================================================
            Filtros de confiabilidad
@@ -1712,12 +1361,10 @@
             });
         });
 
-        /* Filtros de tipo y zona */
         document.getElementById('filtroTipo').addEventListener('change', function() {
             filtroTipo = this.value;
             cargarDispositivos();
         });
-
         document.getElementById('filtroZona').addEventListener('change', function() {
             filtroZona = this.value;
             cargarDispositivos();
@@ -1733,13 +1380,11 @@
             inputFecha.value = new Date().toISOString().split('T')[0];
             cargarTimeline();
         });
-
         inputFecha.addEventListener('change', cargarTimeline);
 
         function cargarTimeline() {
             var fecha = inputFecha.value;
             if (!fecha) return;
-
             cerrarDetalle();
             var container = document.getElementById('timelineContainer');
             container.innerHTML = '<div class="timeline-vacio">Cargando...</div>';
@@ -1748,11 +1393,10 @@
                 .then(function(r) { return r.json(); })
                 .then(function(datos) {
                     if (!datos.length) {
-                        container.innerHTML = '<div class="timeline-vacio">Sin datos de presencia para este dia</div>';
+                        container.innerHTML = '<div class="timeline-vacio">Sin datos de presencia para este día</div>';
                         return;
                     }
 
-                    // Cabecera con horas
                     var horas = '';
                     for (var h = 0; h <= 24; h += 6) {
                         horas += '<span>' + String(h).padStart(2, '0') + ':00</span>';
@@ -1763,30 +1407,23 @@
                         '<div class="timeline-horas">' + horas + '</div>' +
                     '</div>';
 
-                    // Una fila por dispositivo
                     datos.forEach(function(disp) {
                         var icono = TIPOS_ICONO[disp.tipo] || 'device_unknown';
                         var nombre = disp.nombre || disp.mac;
-
                         var barraHtml = '';
                         disp.franjas.forEach(function(f) {
                             var desde = horaAMinutos(f.desde);
                             var hasta = horaAMinutos(f.hasta);
-                            // Si la franja es de un solo punto (desde == hasta),
-                            // mostrar al menos 1% de ancho
-                            var anchoMin = Math.max((hasta - desde) / 1440 * 100, 0.7);
+                            var ancho = Math.max((hasta - desde) / 1440 * 100, 0.7);
                             var izq = desde / 1440 * 100;
-                            barraHtml += '<div class="timeline-franja" ' +
-                                'style="left:' + izq + '%;width:' + anchoMin + '%" ' +
-                                'title="' + f.desde + ' - ' + f.hasta + '">' +
-                            '</div>';
+                            barraHtml += '<div class="timeline-franja" style="left:' + izq + '%;width:' + ancho + '%" title="' + f.desde + ' - ' + f.hasta + '"></div>';
                         });
 
                         html += '<div class="timeline-fila" data-disp-id="' + disp.dispositivo_id + '" ' +
-                            'data-disp-nombre="' + (nombre).replace(/"/g, '&quot;') + '" ' +
+                            'data-disp-nombre="' + nombre.replace(/"/g, '&quot;') + '" ' +
                             'data-disp-tipo="' + disp.tipo + '">' +
                             '<div class="timeline-dispositivo">' +
-                                '<span class="material-symbols-outlined icono-tipo" style="font-size:1rem">' + icono + '</span>' +
+                                '<span class="material-symbols-outlined">' + icono + '</span>' +
                                 '<span class="timeline-dispositivo__nombre">' + nombre + '</span>' +
                             '</div>' +
                             '<div class="timeline-barra">' + barraHtml + '</div>' +
@@ -1794,8 +1431,6 @@
                     });
 
                     container.innerHTML = html;
-
-                    // Hacer filas clicables
                     container.querySelectorAll('.timeline-fila').forEach(function(fila) {
                         fila.addEventListener('click', function() {
                             container.querySelectorAll('.timeline-fila--seleccionada').forEach(function(f) {
@@ -1816,8 +1451,8 @@
         }
 
         function horaAMinutos(hhmm) {
-            var partes = hhmm.split(':');
-            return parseInt(partes[0]) * 60 + parseInt(partes[1]);
+            var p = hhmm.split(':');
+            return parseInt(p[0]) * 60 + parseInt(p[1]);
         }
 
         /* ============================================================
@@ -1846,44 +1481,41 @@
             panel.classList.add('detalle-presencia--visible');
             panel.innerHTML = '<div class="detalle-cabecera">' +
                 '<div class="detalle-titulo">' +
-                    '<span class="material-symbols-outlined" style="font-size:1.2rem">' + icono + '</span>' +
+                    '<span class="material-symbols-outlined">' + icono + '</span>' +
                     nombre +
                 '</div>' +
                 '<div class="detalle-controles">' +
-                    '<button class="detalle-btn-dias' + (dias === 7 ? ' detalle-btn-dias--activo' : '') + '" data-dias="7">7d</button>' +
-                    '<button class="detalle-btn-dias' + (dias === 14 ? ' detalle-btn-dias--activo' : '') + '" data-dias="14">14d</button>' +
-                    '<button class="detalle-btn-dias' + (dias === 30 ? ' detalle-btn-dias--activo' : '') + '" data-dias="30">30d</button>' +
+                    [7, 14, 30].map(function(d) {
+                        return '<button class="detalle-btn-dias' + (dias === d ? ' detalle-btn-dias--activo' : '') + '" data-dias="' + d + '">' + d + 'D</button>';
+                    }).join('') +
                     '<button class="detalle-cerrar" title="Cerrar">' +
-                        '<span class="material-symbols-outlined" style="font-size:1.2rem">close</span>' +
+                        '<span class="material-symbols-outlined" style="font-size:1rem">close</span>' +
                     '</button>' +
                 '</div>' +
             '</div>' +
             '<div class="detalle-sin-datos">Cargando...</div>';
 
-            // Eventos de botones de dias
             panel.querySelectorAll('.detalle-btn-dias').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     detalleDiasActual = parseInt(this.getAttribute('data-dias'));
                     renderizarDetalle();
                 });
             });
-
             panel.querySelector('.detalle-cerrar').addEventListener('click', cerrarDetalle);
 
             fetch(BASE + '/api/presencia/dispositivos/' + id + '?dias=' + dias)
                 .then(function(r) { return r.json(); })
                 .then(function(datos) {
                     if (!datos.dias || !datos.dias.length) {
-                        panel.querySelector('.detalle-sin-datos').textContent = 'Sin datos de presencia en los ultimos ' + dias + ' dias';
+                        var sd = panel.querySelector('.detalle-sin-datos');
+                        if (sd) sd.textContent = 'Sin datos en los últimos ' + dias + ' días';
                         return;
                     }
 
-                    // Cabecera de horas (todas las horas, 0-24)
                     var marcas = '';
                     for (var h = 0; h <= 24; h++) {
                         marcas += '<span>' + String(h).padStart(2, '0') + '</span>';
                     }
-
                     var html = '<div class="detalle-horas-cabecera">' +
                         '<div></div>' +
                         '<div class="detalle-horas-marcas">' + marcas + '</div>' +
@@ -1891,36 +1523,23 @@
                     '</div>';
 
                     var hoy = new Date().toISOString().split('T')[0];
-
-                    // Invertir para mostrar mas reciente arriba
                     datos.dias.forEach(function(dia) {
                         var fechaObj = new Date(dia.fecha + 'T00:00:00');
                         var etiqueta = fechaObj.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
                         var esHoy = dia.fecha === hoy;
-
                         var barraHtml = '';
                         if (dia.franjas && dia.franjas.length) {
                             dia.franjas.forEach(function(f) {
                                 var desde = horaAMinutos(f.desde);
                                 var hasta = horaAMinutos(f.hasta);
-                                var anchoMin = Math.max((hasta - desde) / 1440 * 100, 0.5);
+                                var ancho = Math.max((hasta - desde) / 1440 * 100, 0.5);
                                 var izq = desde / 1440 * 100;
-                                barraHtml += '<div class="detalle-dia__franja" ' +
-                                    'style="left:' + izq + '%;width:' + anchoMin + '%" ' +
-                                    'title="' + f.desde + ' - ' + f.hasta + '">' +
-                                '</div>';
+                                barraHtml += '<div class="detalle-dia__franja" style="left:' + izq + '%;width:' + ancho + '%" title="' + f.desde + ' - ' + f.hasta + '"></div>';
                             });
                         }
-
-                        // Formato de tiempo conectado
-                        var tiempoTexto = '';
-                        if (dia.minutos_conectado >= 60) {
-                            var h = Math.floor(dia.minutos_conectado / 60);
-                            var m = dia.minutos_conectado % 60;
-                            tiempoTexto = h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
-                        } else {
-                            tiempoTexto = dia.minutos_conectado + 'm';
-                        }
+                        var h2 = Math.floor((dia.minutos_conectado || 0) / 60);
+                        var m2 = (dia.minutos_conectado || 0) % 60;
+                        var tiempoTexto = h2 > 0 ? h2 + 'h' + (m2 > 0 ? ' ' + m2 + 'm' : '') : m2 + 'm';
 
                         html += '<div class="detalle-dia">' +
                             '<div class="detalle-dia__fecha' + (esHoy ? ' detalle-dia__hoy' : '') + '">' + etiqueta + '</div>' +
@@ -1929,13 +1548,11 @@
                         '</div>';
                     });
 
-                    // Reemplazar solo el contenido debajo de la cabecera
                     var cabecera = panel.querySelector('.detalle-cabecera');
                     panel.innerHTML = '';
                     panel.appendChild(cabecera);
                     panel.insertAdjacentHTML('beforeend', html);
 
-                    // Re-enlazar eventos
                     panel.querySelectorAll('.detalle-btn-dias').forEach(function(btn) {
                         btn.addEventListener('click', function() {
                             detalleDiasActual = parseInt(this.getAttribute('data-dias'));
@@ -1945,12 +1562,22 @@
                     panel.querySelector('.detalle-cerrar').addEventListener('click', cerrarDetalle);
                 })
                 .catch(function() {
-                    var sinDatos = panel.querySelector('.detalle-sin-datos');
-                    if (sinDatos) sinDatos.textContent = 'Error al cargar el detalle';
+                    var sd = panel.querySelector('.detalle-sin-datos');
+                    if (sd) sd.textContent = 'Error al cargar el detalle';
                 });
 
-            // Scroll al panel
             setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+        }
+
+        function cerrarDetalle() {
+            var panel = document.getElementById('detallePresencia');
+            panel.classList.remove('detalle-presencia--visible');
+            panel.innerHTML = '';
+            detalleDispIdActual = null;
+            document.getElementById('timelineContainer')
+                .querySelectorAll('.timeline-fila--seleccionada').forEach(function(f) {
+                    f.classList.remove('timeline-fila--seleccionada');
+                });
         }
 
         /* ============================================================
@@ -1964,82 +1591,65 @@
             fetch(BASE + '/api/escaneos/estadisticas/por-fecha?dias=' + dias)
                 .then(function(r) { return r.json(); })
                 .then(function(datos) {
-                    if (!datos || datos.length === 0) {
+                    if (!datos || !datos.length) {
                         container.innerHTML = '<div class="sin-datos">Sin datos de escaneos para este período</div>';
                         return;
                     }
-
-                    // Invertir para mostrar más reciente a la derecha
                     datos = datos.reverse();
 
-                    // Renderizar gráfico simple (SVG)
-                    var ancho = 800;
-                    var alto = 300;
-                    var margen = 40;
+                    var ancho = 800, alto = 250, margen = 40;
                     var areaAncho = ancho - margen * 2;
                     var areaAlto = alto - margen * 2;
-
-                    // Calcular escala
-                    var maxEncontrados = Math.max(...datos.map(d => d.promedio_encontrados || 0));
-                    var maxDuracion = Math.max(...datos.map(d => d.duracion_promedio_seg || 0));
+                    var maxEncontrados = Math.max.apply(null, datos.map(function(d) { return d.promedio_encontrados || 0; }));
+                    var maxDuracion = Math.max.apply(null, datos.map(function(d) { return d.duracion_promedio_seg || 0; }));
                     var escalaX = areaAncho / (datos.length - 1 || 1);
-                    var escalaEncontrados = areaAlto / (maxEncontrados || 1);
-                    var escalaDuracion = areaAlto / (maxDuracion || 1);
+                    var escalaEn = areaAlto / (maxEncontrados || 1);
+                    var escalaDur = areaAlto / (maxDuracion || 1);
 
-                    // Generar SVG
-                    var svg = '<svg width="100%" viewBox="0 0 ' + ancho + ' ' + alto + '" style="background: var(--surface-container-lowest)">';
+                    var acentoSvg = getComputedStyle(document.documentElement).getPropertyValue('--ck-accent').trim() || '#00e5c4';
+                    var lineSvg = getComputedStyle(document.documentElement).getPropertyValue('--ck-line').trim() || 'rgba(0,229,196,0.12)';
 
-                    // Ejes
-                    svg += '<line x1="' + margen + '" y1="' + (alto - margen) + '" x2="' + (ancho - margen) + '" y2="' + (alto - margen) + '" stroke="var(--surface-container-high)" stroke-width="1"/>';
-                    svg += '<line x1="' + margen + '" y1="' + margen + '" x2="' + margen + '" y2="' + (alto - margen) + '" stroke="var(--surface-container-high)" stroke-width="1"/>';
+                    var svg = '<svg width="100%" viewBox="0 0 ' + ancho + ' ' + alto + '" style="background:var(--ck-bg3)">';
+                    svg += '<line x1="' + margen + '" y1="' + (alto - margen) + '" x2="' + (ancho - margen) + '" y2="' + (alto - margen) + '" stroke="' + lineSvg + '" stroke-width="1"/>';
+                    svg += '<line x1="' + margen + '" y1="' + margen + '" x2="' + margen + '" y2="' + (alto - margen) + '" stroke="' + lineSvg + '" stroke-width="1"/>';
 
-                    // Barras (duración)
                     datos.forEach(function(d, i) {
-                        var x = margen + (i * escalaX);
-                        var altoBarra = (d.duracion_promedio_seg || 0) * escalaDuracion;
-                        var y = alto - margen - altoBarra;
-                        svg += '<rect x="' + (x - 6) + '" y="' + y + '" width="12" height="' + altoBarra + '" fill="rgba(156, 163, 175, 0.3)" title="' + d.fecha + ': ' + (d.duracion_promedio_seg || 0) + 's"/>';
+                        var x = margen + i * escalaX;
+                        var altBarra = (d.duracion_promedio_seg || 0) * escalaDur;
+                        var y = alto - margen - altBarra;
+                        svg += '<rect x="' + (x - 5) + '" y="' + y + '" width="10" height="' + altBarra + '" fill="rgba(128,128,128,0.15)" title="' + d.fecha + ': ' + (d.duracion_promedio_seg || 0) + 's"/>';
                     });
 
-                    // Línea (promedio encontrados)
-                    var puntos = [];
-                    datos.forEach(function(d, i) {
-                        var x = margen + (i * escalaX);
-                        var altoPunto = (d.promedio_encontrados || 0) * escalaEncontrados;
-                        var y = alto - margen - altoPunto;
-                        puntos.push(x + ',' + y);
+                    var puntos = datos.map(function(d, i) {
+                        var x = margen + i * escalaX;
+                        var y = alto - margen - (d.promedio_encontrados || 0) * escalaEn;
+                        return x + ',' + y;
                     });
-                    if (puntos.length > 0) {
-                        svg += '<polyline points="' + puntos.join(' ') + '" fill="none" stroke="var(--primary)" stroke-width="2"/>';
+                    if (puntos.length > 1) {
+                        svg += '<polyline points="' + puntos.join(' ') + '" fill="none" stroke="' + acentoSvg + '" stroke-width="2"/>';
                     }
-
-                    // Puntos
                     datos.forEach(function(d, i) {
-                        var x = margen + (i * escalaX);
-                        var altoPunto = (d.promedio_encontrados || 0) * escalaEncontrados;
-                        var y = alto - margen - altoPunto;
-                        svg += '<circle cx="' + x + '" cy="' + y + '" r="3" fill="var(--primary)" title="' + d.fecha + ': ' + (d.promedio_encontrados || 0) + ' encontrados"/>';
+                        var x = margen + i * escalaX;
+                        var y = alto - margen - (d.promedio_encontrados || 0) * escalaEn;
+                        svg += '<circle cx="' + x + '" cy="' + y + '" r="3" fill="' + acentoSvg + '" title="' + d.fecha + ': ' + (d.promedio_encontrados || 0) + ' encontrados"/>';
                     });
-
                     svg += '</svg>';
-
                     container.innerHTML = svg;
 
-                    // Mostrar datos en tabla
-                    var tablaDatos = '<div style="font-size:0.8rem;color:var(--on-surface-variant)">';
+                    var html = '<div class="historial-tabla">';
                     datos.forEach(function(d) {
-                        tablaDatos += '<div class="historial-datos-fila">' +
-                            '<div class="historial-datos-fila__label">' + d.fecha + '</div>' +
-                            '<div>' +
-                                'Escaneos: ' + d.num_escaneos + ' · ' +
-                                'Promedio: ' + (d.promedio_encontrados || 0).toFixed(1) + ' · ' +
-                                'Máx nuevos: ' + (d.max_nuevos || 0) + ' · ' +
+                        html += '<div class="historial-fila">' +
+                            '<div class="historial-fila__label">' + d.fecha + '</div>' +
+                            '<div class="historial-fila__val">' +
+                                'Escaneos: ' + d.num_escaneos + ' &nbsp;·&nbsp; ' +
+                                'Promedio: ' + (d.promedio_encontrados || 0).toFixed(1) + ' &nbsp;·&nbsp; ' +
+                                'Máx nuevos: ' + (d.max_nuevos || 0) + ' &nbsp;·&nbsp; ' +
                                 'Duración: ' + ((d.duracion_promedio_seg || 0) / 60).toFixed(1) + ' min' +
                             '</div>' +
                         '</div>';
                     });
-                    tablaDatos += '</div>';
-                    document.getElementById('historialDatos').innerHTML = tablaDatos;
+                    html += '</div>';
+                    document.getElementById('historialDatos').innerHTML = html;
                 })
                 .catch(function(e) {
                     console.error('Error cargando historial:', e);
@@ -2047,35 +1657,31 @@
                 });
         }
 
-        // Event listener para botón Cargar y selector de días
         document.getElementById('btnCargarHistorial').addEventListener('click', cargarHistorial);
         document.getElementById('filtroHistorialDias').addEventListener('change', cargarHistorial);
 
         /* ============================================================
-           Configuracion (Modal)
+           Configuración
            ============================================================ */
-        var configActual = {}; // Almacenar configuración actual
+        var configActual = {};
 
         function cargarConfiguracion() {
             fetch(BASE + '/api/config')
                 .then(function(r) { return r.json(); })
                 .then(function(datos) {
-                    // Guardar para comparación
                     configActual = {};
                     datos.forEach(function(c) { configActual[c.clave] = c; });
 
-                    // Mostrar resumen en el panel
                     var html = '';
-                    datos.forEach(function(config) {
-                        html += '<div style="margin-bottom: var(--gap-md);">' +
-                            '<strong>' + config.clave.replace(/_/g, ' ').toUpperCase() + ':</strong><br>' +
-                            '<code style="color: var(--primary); font-size: 0.85rem;">' + (config.valor || '-') + '</code>' +
+                    datos.forEach(function(c) {
+                        html += '<div class="config-resumen-item">' +
+                            '<div class="config-resumen-clave">' + c.clave.replace(/_/g, ' ') + '</div>' +
+                            '<div class="config-resumen-val">' + (c.valor || '—') + '</div>' +
                         '</div>';
                     });
                     document.getElementById('configResumen').innerHTML = html;
                 })
-                .catch(function(e) {
-                    console.error('Error cargando configuración:', e);
+                .catch(function() {
                     document.getElementById('configResumen').innerHTML = '<div class="sin-datos">Error al cargar configuración</div>';
                 });
         }
@@ -2085,31 +1691,22 @@
                 .then(function(r) { return r.json(); })
                 .then(function(datos) {
                     var html = '';
-                    datos.forEach(function(config) {
-                        var inputType = config.tipo === 'int' ? 'number' : (config.tipo === 'float' ? 'number' : 'text');
-                        var step = config.tipo === 'float' ? '0.1' : '';
-                        var label = config.clave.replace(/_/g, ' ').toUpperCase();
-
+                    datos.forEach(function(c) {
+                        var inputType = c.tipo === 'int' ? 'number' : (c.tipo === 'float' ? 'number' : 'text');
+                        var step = c.tipo === 'float' ? 'step="0.1"' : '';
+                        var label = c.clave.replace(/_/g, ' ').toUpperCase();
                         html += '<div class="config-campo">' +
                             '<label class="modal__label">' + label + '</label>' +
-                            '<input type="' + inputType + '" ' +
-                                'value="' + (config.valor || '') + '" ' +
-                                'data-clave="' + config.clave + '" ' +
-                                'data-tipo="' + config.tipo + '" ' +
-                                (step ? 'step="' + step + '" ' : '') +
-                                'class="config-input">' +
-                            '<span class="modal__help">' + (config.descripcion || '') + '</span>' +
-                            '<div class="config-error" data-clave="' + config.clave + '" style="display:none;"></div>' +
+                            '<input type="' + inputType + '" ' + step + ' value="' + (c.valor || '') + '" ' +
+                                'data-clave="' + c.clave + '" data-tipo="' + c.tipo + '" class="config-input">' +
+                            '<span class="modal__help">' + (c.descripcion || '') + '</span>' +
+                            '<div class="config-error" data-clave="' + c.clave + '" style="display:none"></div>' +
                         '</div>';
                     });
-
                     document.getElementById('configModalBody').innerHTML = html;
                     document.getElementById('configModalOverlay').style.display = 'flex';
                 })
-                .catch(function(e) {
-                    console.error('Error abriendo modal:', e);
-                    alert('Error al cargar configuración');
-                });
+                .catch(function() { alert('Error al cargar configuración'); });
         }
 
         function cerrarModalConfig() {
@@ -2118,75 +1715,55 @@
 
         function guardarConfiguracion() {
             var inputs = document.querySelectorAll('.config-input');
-            var cambios = {}; // { clave: valor, ... }
-            var errores = {}; // { clave: 'error msg', ... }
-            var hayErrores = false;
+            var cambios = {}, hayErrores = false;
 
-            // Validar y recopilar cambios
             inputs.forEach(function(input) {
                 var clave = input.getAttribute('data-clave');
                 var valor = input.value.trim();
                 var errorDiv = document.querySelector('.config-error[data-clave="' + clave + '"]');
-
-                // Limpiar error anterior
-                errorDiv.style.display = 'none';
-                errorDiv.textContent = '';
+                errorDiv.style.display = 'none'; errorDiv.textContent = '';
 
                 if (!valor) {
-                    errores[clave] = 'No puede estar vacío';
-                    errorDiv.textContent = errores[clave];
+                    errorDiv.textContent = 'No puede estar vacío';
                     errorDiv.style.display = 'block';
                     hayErrores = true;
                     return;
                 }
-
                 cambios[clave] = valor;
             });
 
             if (hayErrores) return;
 
-            // Guardar todos los cambios
             var btn = document.getElementById('btnGuardarConfigModal');
-            btn.disabled = true;
-            btn.textContent = 'GUARDANDO...';
+            btn.disabled = true; btn.textContent = 'GUARDANDO...';
 
-            var promesas = [];
-            Object.keys(cambios).forEach(function(clave) {
-                promesas.push(
-                    fetch(BASE + '/api/config/' + clave, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ valor: cambios[clave] })
-                    })
-                        .then(function(r) {
-                            if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Error desconocido'); });
-                            return r.json();
-                        })
-                        .catch(function(e) {
-                            var errorDiv = document.querySelector('.config-error[data-clave="' + clave + '"]');
-                            errorDiv.textContent = e.message;
-                            errorDiv.style.display = 'block';
-                            hayErrores = true;
-                            throw e;
-                        })
-                );
-            });
-
-            Promise.all(promesas)
-                .then(function() {
-                    btn.disabled = false;
-                    btn.textContent = 'GUARDAR';
-                    cerrarModalConfig();
-                    cargarConfiguracion(); // Actualizar resumen
+            Promise.all(Object.keys(cambios).map(function(clave) {
+                return fetch(BASE + '/api/config/' + clave, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ valor: cambios[clave] })
+                })
+                .then(function(r) {
+                    if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Error'); });
+                    return r.json();
                 })
                 .catch(function(e) {
-                    btn.disabled = false;
-                    btn.textContent = 'GUARDAR';
-                    console.error('Error guardando configuración:', e);
+                    var errorDiv = document.querySelector('.config-error[data-clave="' + clave + '"]');
+                    errorDiv.textContent = e.message;
+                    errorDiv.style.display = 'block';
+                    throw e;
                 });
+            }))
+            .then(function() {
+                btn.disabled = false; btn.textContent = 'GUARDAR';
+                cerrarModalConfig();
+                cargarConfiguracion();
+            })
+            .catch(function() {
+                btn.disabled = false; btn.textContent = 'GUARDAR';
+            });
         }
 
-        // Event listeners
         document.getElementById('btnAbrirConfigModal').addEventListener('click', abrirModalConfig);
         document.getElementById('btnCerrarConfigModal').addEventListener('click', cerrarModalConfig);
         document.getElementById('btnCancelarConfigModal').addEventListener('click', cerrarModalConfig);
@@ -2195,32 +1772,20 @@
             if (e.target === this) cerrarModalConfig();
         });
 
-        function cerrarDetalle() {
-            var panel = document.getElementById('detallePresencia');
-            panel.classList.remove('detalle-presencia--visible');
-            panel.innerHTML = '';
-            detalleDispIdActual = null;
-            var container = document.getElementById('timelineContainer');
-            container.querySelectorAll('.timeline-fila--seleccionada').forEach(function(f) {
-                f.classList.remove('timeline-fila--seleccionada');
-            });
-        }
-
         /* ============================================================
            Utilidades
            ============================================================ */
         function formatearFecha(iso) {
-            if (!iso) return '-';
+            if (!iso) return '—';
             try {
-                var d = new Date(iso);
-                return d.toLocaleString('es-ES', {
+                return new Date(iso).toLocaleString('es-ES', {
                     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
                 });
             } catch(e) { return iso; }
         }
 
         /* ============================================================
-           Inicializacion
+           Inicialización
            ============================================================ */
         cargarTipos();
         cargarResumen();
