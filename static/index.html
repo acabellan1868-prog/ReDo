@@ -831,8 +831,10 @@
                 </table>
             </div>
 
-            <!-- Vista agrupada -->
-            <div id="vistaAgrupada" style="display:none; padding: 0.5rem 0;"></div>
+            <!-- Grafo jerárquico -->
+            <div id="vistaGrafo" style="display:none; padding: 1rem 0;">
+                <div id="grafoContenedor" style="position:relative; width:100%; min-height:600px; background:var(--ck-bg2); border:1px solid var(--ck-line); overflow:auto"></div>
+            </div>
         </div>
 
         <!-- ======== PANEL: PRESENCIA ======== -->
@@ -1007,12 +1009,17 @@
         });
 
         /* ============================================================
-           Estado de filtros
+           Estado de filtros y vistas
            ============================================================ */
         var filtroConfiable = 'todos';
         var filtroTipo = '';
         var filtroZona = '';
         var modoAgrupado = false;
+
+        // Actualizar botón toggle al iniciar
+        (function() {
+            document.getElementById('btnToggleVista').innerHTML = '<span class="material-symbols-outlined">view_list</span> LISTA';
+        })();
 
         /* ============================================================
            Resumen
@@ -1084,18 +1091,18 @@
                 .then(function(r) { return r.json(); })
                 .then(function(lista) {
                     document.getElementById('vistaLista').style.display = modoAgrupado ? 'none' : 'block';
-                    document.getElementById('vistaAgrupada').style.display = modoAgrupado ? 'block' : 'none';
+                    document.getElementById('vistaGrafo').style.display = modoAgrupado ? 'block' : 'none';
 
                     if (!lista.length) {
                         var c = modoAgrupado
-                            ? document.getElementById('vistaAgrupada')
+                            ? document.getElementById('grafoContenedor')
                             : document.getElementById('tablaDispositivos');
                         c.innerHTML = '<div class="sin-datos">No hay dispositivos</div>';
                         return;
                     }
 
                     if (modoAgrupado) {
-                        renderizarAgrupado(lista);
+                        renderizarGrafo(lista);
                     } else {
                         var tbody = document.getElementById('tablaDispositivos');
                         tbody.innerHTML = lista.map(function(d) {
@@ -1140,64 +1147,143 @@
         }
 
         /* ============================================================
-           Vista agrupada por tipo → zona
+           Grafo jerárquico: tipos → dispositivos
            ============================================================ */
-        function renderizarAgrupado(dispositivos) {
+        var grafoExpandidos = {}; // {tipo: true/false}
+
+        function estaActivo(ultimaVez) {
+            if (!ultimaVez) return false;
+            var ahora = new Date();
+            var ultima = new Date(ultimaVez);
+            var minutos = (ahora - ultima) / 1000 / 60;
+            return minutos < 5;
+        }
+
+        function renderizarGrafo(dispositivos) {
             var grupos = dispositivos.reduce(function(acc, d) {
                 var tipo = d.tipo || 'otro';
-                if (!acc[tipo]) acc[tipo] = {};
-                var zona = d.zona || 'Sin zona';
-                if (!acc[tipo][zona]) acc[tipo][zona] = [];
-                acc[tipo][zona].push(d);
+                if (!acc[tipo]) acc[tipo] = [];
+                acc[tipo].push(d);
                 return acc;
             }, {});
 
-            var html = '';
-            Object.keys(grupos).sort().forEach(function(tipo) {
-                var icono = TIPOS_ICONO[tipo] || 'device_unknown';
-                var zonas = grupos[tipo];
-                var total = Object.values(zonas).reduce(function(s, a) { return s + a.length; }, 0);
+            var tipos = Object.keys(grupos).sort();
+            var contenedor = document.getElementById('grafoContenedor');
 
-                html += '<div class="tipo-grupo">' +
-                    '<h2 class="tipo-titulo">' +
-                    '<span class="material-symbols-outlined">' + icono + '</span>' +
-                    tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' (' + total + ')</h2>';
+            // SVG para el nivel 1 (tipos)
+            var svgAncho = Math.max(800, tipos.length * 180);
+            var svgAlto = 250;
+            var radio = 100; // radio del círculo donde se posicionan los tipos
+            var cx = svgAncho / 2, cy = svgAlto / 2;
 
-                Object.keys(zonas).sort().forEach(function(zona) {
-                    html += '<div class="zona-grupo">' +
-                        '<h3 class="zona-titulo">◈ ' + zona + ' (' + zonas[zona].length + ')</h3>' +
-                        '<div class="zona-dispositivos">';
+            var svg = '<svg width="100%" height="' + svgAlto + '" viewBox="0 0 ' + svgAncho + ' ' + svgAlto + '" style="background:var(--ck-bg2);border-bottom:1px solid var(--ck-line);margin-bottom:1rem">';
 
-                    html += zonas[zona].map(function(d) {
-                        var ico = TIPOS_ICONO[d.tipo] || 'device_unknown';
-                        var nom = d.notas || 'Sin nombre';
-                        var esConf = d.confiable === 1;
-                        var badge = esConf
-                            ? '<span class="redo-badge redo-badge--ok">CONFIABLE</span>'
-                            : '<span class="redo-badge redo-badge--warn">DESCONOCIDO</span>';
-
-                        return '<div class="disp-tarjeta">' +
-                            '<div class="disp-tarjeta__tipo"><span class="material-symbols-outlined">' + ico + '</span></div>' +
-                            '<div class="disp-tarjeta__nombre">' + nom + '</div>' +
-                            '<div class="disp-tarjeta__mac">' + d.mac + '</div>' +
-                            '<div class="disp-tarjeta__info">' +
-                                '<strong>IP:</strong> ' + (d.ip || '?') +
-                                (d.hostname ? '<br><strong>Host:</strong> ' + d.hostname : '') +
-                            '</div>' +
-                            badge +
-                            '<div class="disp-tarjeta__acciones">' +
-                                '<button class="redo-accion-btn" onclick="abrirModal(' + d.id + ')">EDITAR</button>' +
-                                '<button class="redo-accion-btn" onclick="verPresencia(' + d.id + ')">PRESENCIA</button>' +
-                            '</div>' +
-                        '</div>';
-                    }).join('');
-
-                    html += '</div></div>';
-                });
-                html += '</div>';
+            // Dibujar líneas entre tipos conectados
+            var posiciones = {};
+            tipos.forEach(function(tipo, i) {
+                var angulo = (2 * Math.PI * i) / tipos.length;
+                var x = cx + radio * Math.cos(angulo);
+                var y = cy + radio * Math.sin(angulo);
+                posiciones[tipo] = {x: x, y: y};
             });
 
-            document.getElementById('vistaAgrupada').innerHTML = html;
+            // Líneas de conexión entre tipos (si comparten zona)
+            tipos.forEach(function(tipo, i) {
+                for (var j = i + 1; j < tipos.length; j++) {
+                    var tipo2 = tipos[j];
+                    var zonas1 = new Set(grupos[tipo].map(function(d) { return d.zona || 'Sin zona'; }));
+                    var zonas2 = new Set(grupos[tipo2].map(function(d) { return d.zona || 'Sin zona'; }));
+                    var compartidas = [...zonas1].some(function(z) { return zonas2.has(z); });
+
+                    if (compartidas) {
+                        var p1 = posiciones[tipo];
+                        var p2 = posiciones[tipo2];
+                        svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" ' +
+                               'stroke="rgba(128,128,128,0.2)" stroke-width="1" stroke-dasharray="5,5"/>';
+                    }
+                }
+            });
+
+            // Nodos de tipos
+            tipos.forEach(function(tipo) {
+                var disp = grupos[tipo];
+                var activos = disp.filter(function(d) { return estaActivo(d.ultima_vez); }).length;
+                var total = disp.length;
+                var porcentaje = total > 0 ? activos / total : 0;
+                var icono = TIPOS_ICONO[tipo] || 'device_unknown';
+                var pos = posiciones[tipo];
+                var radio_nodo = 40 + (total * 2);
+                var color = porcentaje > 0.7 ? 'var(--ck-success)' : (porcentaje > 0.3 ? 'var(--ck-accent)' : 'var(--ck-danger)');
+
+                svg += '<g onclick="toggleExpandirTipo(\'' + tipo + '\')" style="cursor:pointer">' +
+                    '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + radio_nodo + '" fill="' + color + '" opacity="0.15" stroke="' + color + '" stroke-width="2"/>' +
+                    '<text x="' + pos.x + '" y="' + (pos.y - 10) + '" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ck-on-surface)">' +
+                        tipo.charAt(0).toUpperCase() + tipo.slice(1) +
+                    '</text>' +
+                    '<text x="' + pos.x + '" y="' + (pos.y + 8) + '" text-anchor="middle" font-size="12" fill="var(--ck-on-variant)">' +
+                        activos + '/' + total +
+                    '</text>' +
+                '</g>';
+            });
+
+            svg += '</svg>';
+
+            // Panel de expansión (dispositivos individuales)
+            var html = svg;
+            tipos.forEach(function(tipo) {
+                if (grafoExpandidos[tipo]) {
+                    html += '<div style="padding:1rem;border-left:4px solid var(--ck-accent);margin-bottom:1rem;background:var(--ck-bg3)">' +
+                        '<h3 style="margin:0 0 0.75rem;font-size:0.72rem;font-weight:700;color:var(--ck-accent);text-transform:uppercase">' +
+                        tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' (' + grupos[tipo].length + ')' +
+                        '</h3>';
+
+                    var zonas = grupos[tipo].reduce(function(acc, d) {
+                        var zona = d.zona || 'Sin zona';
+                        if (!acc[zona]) acc[zona] = [];
+                        acc[zona].push(d);
+                        return acc;
+                    }, {});
+
+                    Object.keys(zonas).sort().forEach(function(zona) {
+                        html += '<h4 style="margin:0.5rem 0 0.5rem 1rem;font-size:0.6rem;font-weight:700;color:var(--ck-on-variant);text-transform:uppercase">◈ ' + zona + '</h4>' +
+                            '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-left:1rem;margin-bottom:1rem">';
+
+                        zonas[zona].forEach(function(d) {
+                            var ico = TIPOS_ICONO[d.tipo] || 'device_unknown';
+                            var nom = d.notas || 'Sin nombre';
+                            var activo = estaActivo(d.ultima_vez);
+                            var lineaColor = activo ? 'var(--ck-success)' : 'transparent';
+
+                            html += '<div style="padding:0.75rem;background:var(--ck-bg2);border:2px solid ' + lineaColor + ';cursor:pointer" ' +
+                                'onclick="abrirModal(' + d.id + ')" onmouseover="this.style.background=\'var(--ck-bg3)\'" onmouseout="this.style.background=\'var(--ck-bg2)\'">' +
+                                '<div style="font-size:1.3rem;color:var(--ck-accent);margin-bottom:0.35rem">' +
+                                    '<span class="material-symbols-outlined">' + ico + '</span>' +
+                                '</div>' +
+                                '<div style="font-size:0.72rem;font-weight:700;color:var(--ck-on-surface);margin-bottom:0.2rem">' + nom + '</div>' +
+                                '<div style="font-size:0.6rem;color:var(--ck-on-variant);margin-bottom:0.35rem">' + d.mac + '</div>' +
+                                '<div style="font-size:0.6rem;color:var(--ck-on-variant);margin-bottom:0.35rem">' +
+                                    '<strong>IP:</strong> ' + (d.ip || '?') +
+                                '</div>' +
+                                '<div style="display:inline-block;font-size:0.55rem;font-weight:700;padding:0.2rem 0.5rem;border:1px solid ' +
+                                    (activo ? 'var(--ck-success)' : 'var(--ck-danger)') + ';color:' +
+                                    (activo ? 'var(--ck-success)' : 'var(--ck-danger)') + '">' +
+                                    (activo ? '● CONECTADO' : '○ DESCONECTADO') +
+                                '</div>' +
+                            '</div>';
+                        });
+
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+            });
+
+            contenedor.innerHTML = html;
+        }
+
+        function toggleExpandirTipo(tipo) {
+            grafoExpandidos[tipo] = !grafoExpandidos[tipo];
+            cargarDispositivos();
         }
 
         /* ============================================================
@@ -1340,13 +1426,14 @@
         });
 
         /* ============================================================
-           Toggle vista lista / agrupada
+           Toggle vista lista / grafo
            ============================================================ */
         document.getElementById('btnToggleVista').addEventListener('click', function() {
             modoAgrupado = !modoAgrupado;
+            grafoExpandidos = {}; // Reset expansiones al cambiar vista
             this.innerHTML = '<span class="material-symbols-outlined">' +
-                (modoAgrupado ? 'dashboard' : 'view_list') + '</span> ' +
-                (modoAgrupado ? 'AGRUPADA' : 'LISTA');
+                (modoAgrupado ? 'share_nodes' : 'view_list') + '</span> ' +
+                (modoAgrupado ? 'GRAFO' : 'LISTA');
             cargarDispositivos();
         });
 
