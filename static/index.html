@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ReDo — Red Doméstica</title>
     <link rel="stylesheet" href="/static/hogar.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
         /* ── Reset base ── */
         html { font-size: 150%; }
@@ -1016,11 +1017,6 @@
         var filtroZona = '';
         var modoAgrupado = false;
 
-        // Actualizar botón toggle al iniciar
-        (function() {
-            document.getElementById('btnToggleVista').innerHTML = '<span class="material-symbols-outlined">view_list</span> LISTA';
-        })();
-
         /* ============================================================
            Resumen
            ============================================================ */
@@ -1147,9 +1143,11 @@
         }
 
         /* ============================================================
-           Grafo jerárquico: tipos → dispositivos
+           Grafo Cytoscape: tipos → dispositivos
            ============================================================ */
-        var grafoExpandidos = {}; // {tipo: true/false}
+        var cytoInstance = null;
+        var grafoNivelActual = 'tipos'; // 'tipos' o 'dispositivos'
+        var dispositivosGlobal = [];
 
         function estaActivo(ultimaVez) {
             if (!ultimaVez) return false;
@@ -1160,6 +1158,12 @@
         }
 
         function renderizarGrafo(dispositivos) {
+            dispositivosGlobal = dispositivos;
+            grafoNivelActual = 'tipos';
+            mostrarGrafoTipos(dispositivos);
+        }
+
+        function mostrarGrafoTipos(dispositivos) {
             var grupos = dispositivos.reduce(function(acc, d) {
                 var tipo = d.tipo || 'otro';
                 if (!acc[tipo]) acc[tipo] = [];
@@ -1168,122 +1172,181 @@
             }, {});
 
             var tipos = Object.keys(grupos).sort();
-            var contenedor = document.getElementById('grafoContenedor');
+            var elementos = [];
 
-            // SVG para el nivel 1 (tipos)
-            var svgAncho = Math.max(800, tipos.length * 180);
-            var svgAlto = 250;
-            var radio = 100; // radio del círculo donde se posicionan los tipos
-            var cx = svgAncho / 2, cy = svgAlto / 2;
+            // Nodo central: Router (tipo con más dispositivos activos)
+            var tipoRouter = tipos.reduce(function(max, tipo) {
+                var activos = grupos[tipo].filter(function(d) { return estaActivo(d.ultima_vez); }).length;
+                var maxActivos = grupos[max].filter(function(d) { return estaActivo(d.ultima_vez); }).length;
+                return activos > maxActivos ? tipo : max;
+            }, tipos[0]);
 
-            var svg = '<svg width="100%" height="' + svgAlto + '" viewBox="0 0 ' + svgAncho + ' ' + svgAlto + '" style="background:var(--ck-bg2);border-bottom:1px solid var(--ck-line);margin-bottom:1rem">';
-
-            // Dibujar líneas entre tipos conectados
-            var posiciones = {};
-            tipos.forEach(function(tipo, i) {
-                var angulo = (2 * Math.PI * i) / tipos.length;
-                var x = cx + radio * Math.cos(angulo);
-                var y = cy + radio * Math.sin(angulo);
-                posiciones[tipo] = {x: x, y: y};
+            elementos.push({
+                data: { id: 'centro', label: tipoRouter, tipo: tipoRouter, activos: grupos[tipoRouter].filter(function(d) { return estaActivo(d.ultima_vez); }).length, total: grupos[tipoRouter].length },
+                classes: 'nodo-tipo nodo-centro'
             });
 
-            // Líneas de conexión entre tipos (si comparten zona)
-            tipos.forEach(function(tipo, i) {
-                for (var j = i + 1; j < tipos.length; j++) {
-                    var tipo2 = tipos[j];
-                    var zonas1 = new Set(grupos[tipo].map(function(d) { return d.zona || 'Sin zona'; }));
-                    var zonas2 = new Set(grupos[tipo2].map(function(d) { return d.zona || 'Sin zona'; }));
-                    var compartidas = [...zonas1].some(function(z) { return zonas2.has(z); });
-
-                    if (compartidas) {
-                        var p1 = posiciones[tipo];
-                        var p2 = posiciones[tipo2];
-                        svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" ' +
-                               'stroke="rgba(128,128,128,0.2)" stroke-width="1" stroke-dasharray="5,5"/>';
-                    }
-                }
-            });
-
-            // Nodos de tipos
+            // Nodos de tipos (alrededor del router)
             tipos.forEach(function(tipo) {
-                var disp = grupos[tipo];
-                var activos = disp.filter(function(d) { return estaActivo(d.ultima_vez); }).length;
-                var total = disp.length;
-                var porcentaje = total > 0 ? activos / total : 0;
-                var icono = TIPOS_ICONO[tipo] || 'device_unknown';
-                var pos = posiciones[tipo];
-                var radio_nodo = 40 + (total * 2);
-                var color = porcentaje > 0.7 ? 'var(--ck-success)' : (porcentaje > 0.3 ? 'var(--ck-accent)' : 'var(--ck-danger)');
+                if (tipo !== tipoRouter) {
+                    var activos = grupos[tipo].filter(function(d) { return estaActivo(d.ultima_vez); }).length;
+                    var total = grupos[tipo].length;
+                    var porcentaje = total > 0 ? activos / total : 0;
+                    var clase = porcentaje > 0.7 ? 'nodo-activo' : (porcentaje > 0.3 ? 'nodo-parcial' : 'nodo-inactivo');
 
-                svg += '<g onclick="toggleExpandirTipo(\'' + tipo + '\')" style="cursor:pointer">' +
-                    '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + radio_nodo + '" fill="' + color + '" opacity="0.15" stroke="' + color + '" stroke-width="2"/>' +
-                    '<text x="' + pos.x + '" y="' + (pos.y - 10) + '" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ck-on-surface)">' +
-                        tipo.charAt(0).toUpperCase() + tipo.slice(1) +
-                    '</text>' +
-                    '<text x="' + pos.x + '" y="' + (pos.y + 8) + '" text-anchor="middle" font-size="12" fill="var(--ck-on-variant)">' +
-                        activos + '/' + total +
-                    '</text>' +
-                '</g>';
-            });
-
-            svg += '</svg>';
-
-            // Panel de expansión (dispositivos individuales)
-            var html = svg;
-            tipos.forEach(function(tipo) {
-                if (grafoExpandidos[tipo]) {
-                    html += '<div style="padding:1rem;border-left:4px solid var(--ck-accent);margin-bottom:1rem;background:var(--ck-bg3)">' +
-                        '<h3 style="margin:0 0 0.75rem;font-size:0.72rem;font-weight:700;color:var(--ck-accent);text-transform:uppercase">' +
-                        tipo.charAt(0).toUpperCase() + tipo.slice(1) + ' (' + grupos[tipo].length + ')' +
-                        '</h3>';
-
-                    var zonas = grupos[tipo].reduce(function(acc, d) {
-                        var zona = d.zona || 'Sin zona';
-                        if (!acc[zona]) acc[zona] = [];
-                        acc[zona].push(d);
-                        return acc;
-                    }, {});
-
-                    Object.keys(zonas).sort().forEach(function(zona) {
-                        html += '<h4 style="margin:0.5rem 0 0.5rem 1rem;font-size:0.6rem;font-weight:700;color:var(--ck-on-variant);text-transform:uppercase">◈ ' + zona + '</h4>' +
-                            '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-left:1rem;margin-bottom:1rem">';
-
-                        zonas[zona].forEach(function(d) {
-                            var ico = TIPOS_ICONO[d.tipo] || 'device_unknown';
-                            var nom = d.notas || 'Sin nombre';
-                            var activo = estaActivo(d.ultima_vez);
-                            var lineaColor = activo ? 'var(--ck-success)' : 'transparent';
-
-                            html += '<div style="padding:0.75rem;background:var(--ck-bg2);border:2px solid ' + lineaColor + ';cursor:pointer" ' +
-                                'onclick="abrirModal(' + d.id + ')" onmouseover="this.style.background=\'var(--ck-bg3)\'" onmouseout="this.style.background=\'var(--ck-bg2)\'">' +
-                                '<div style="font-size:1.3rem;color:var(--ck-accent);margin-bottom:0.35rem">' +
-                                    '<span class="material-symbols-outlined">' + ico + '</span>' +
-                                '</div>' +
-                                '<div style="font-size:0.72rem;font-weight:700;color:var(--ck-on-surface);margin-bottom:0.2rem">' + nom + '</div>' +
-                                '<div style="font-size:0.6rem;color:var(--ck-on-variant);margin-bottom:0.35rem">' + d.mac + '</div>' +
-                                '<div style="font-size:0.6rem;color:var(--ck-on-variant);margin-bottom:0.35rem">' +
-                                    '<strong>IP:</strong> ' + (d.ip || '?') +
-                                '</div>' +
-                                '<div style="display:inline-block;font-size:0.55rem;font-weight:700;padding:0.2rem 0.5rem;border:1px solid ' +
-                                    (activo ? 'var(--ck-success)' : 'var(--ck-danger)') + ';color:' +
-                                    (activo ? 'var(--ck-success)' : 'var(--ck-danger)') + '">' +
-                                    (activo ? '● CONECTADO' : '○ DESCONECTADO') +
-                                '</div>' +
-                            '</div>';
-                        });
-
-                        html += '</div>';
+                    elementos.push({
+                        data: { id: 'tipo-' + tipo, label: tipo, tipo: tipo, activos: activos, total: total },
+                        classes: 'nodo-tipo ' + clase
                     });
-                    html += '</div>';
+
+                    elementos.push({
+                        data: { source: 'centro', target: 'tipo-' + tipo }
+                    });
                 }
             });
 
-            contenedor.innerHTML = html;
+            inicializarCytoscape(elementos, function(evt) {
+                if (evt.target.isNode() && evt.target.id() !== 'centro') {
+                    var tipo = evt.target.data('tipo');
+                    mostrarGrafoTipo(tipo, dispositivosGlobal);
+                }
+            });
         }
 
-        function toggleExpandirTipo(tipo) {
-            grafoExpandidos[tipo] = !grafoExpandidos[tipo];
-            cargarDispositivos();
+        function mostrarGrafoTipo(tipo, dispositivos) {
+            grafoNivelActual = 'dispositivos';
+            var disp = dispositivos.filter(function(d) { return d.tipo === tipo; });
+            var elementos = [];
+
+            // Nodo central del tipo
+            elementos.push({
+                data: { id: 'centro', label: tipo, tipo: tipo },
+                classes: 'nodo-tipo nodo-centro'
+            });
+
+            // Nodos de dispositivos
+            disp.forEach(function(d) {
+                var activo = estaActivo(d.ultima_vez);
+                var clase = activo ? 'nodo-dispositivo activo' : 'nodo-dispositivo inactivo';
+
+                elementos.push({
+                    data: { id: 'disp-' + d.id, label: d.notas || d.mac, dispositivo_id: d.id, activo: activo },
+                    classes: clase
+                });
+
+                elementos.push({
+                    data: { source: 'centro', target: 'disp-' + d.id, activo: activo },
+                    classes: activo ? 'arista-activa' : 'arista-inactiva'
+                });
+            });
+
+            inicializarCytoscape(elementos, function(evt) {
+                if (evt.target.isNode() && evt.target.id() !== 'centro') {
+                    var dispId = evt.target.data('dispositivo_id');
+                    abrirModal(dispId);
+                }
+            });
+
+            // Botón "atrás"
+            document.getElementById('grafoContenedor').innerHTML +=
+                '<button style="position:absolute;top:10px;left:10px;padding:0.5rem 1rem;background:var(--ck-bg3);border:1px solid var(--ck-line);color:var(--ck-on-surface);cursor:pointer;font-weight:700" ' +
+                'onclick="mostrarGrafoTipos(dispositivosGlobal)">← ATRÁS</button>';
+        }
+
+        function inicializarCytoscape(elementos, onNodeClick) {
+            var contenedor = document.getElementById('grafoContenedor');
+            contenedor.innerHTML = '<div id="cy" style="width:100%;height:600px;background:var(--ck-bg2);border:1px solid var(--ck-line)"></div>';
+
+            var estilos = cytoscape.stylesheet()
+                .selector('node.nodo-tipo')
+                .css({
+                    'content': 'data(label)',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'background-color': '#3aa8a0',
+                    'width': 'mapData(total, 0, 30, 40, 100)',
+                    'height': 'mapData(total, 0, 30, 40, 100)',
+                    'font-size': 12,
+                    'color': 'var(--ck-on-surface)',
+                    'border-width': 2,
+                    'border-color': '#3aa8a0',
+                    'text-background-color': 'var(--ck-bg2)',
+                    'text-background-opacity': 0.8,
+                    'text-background-padding': '4px'
+                })
+                .selector('node.nodo-centro')
+                .css({
+                    'width': 120,
+                    'height': 120,
+                    'background-color': '#e85454',
+                    'border-color': '#e85454',
+                    'font-size': 14,
+                    'font-weight': 'bold'
+                })
+                .selector('node.nodo-activo')
+                .css({
+                    'background-color': '#3aa8a0'
+                })
+                .selector('node.nodo-parcial')
+                .css({
+                    'background-color': '#ffa500'
+                })
+                .selector('node.nodo-inactivo')
+                .css({
+                    'background-color': '#888888'
+                })
+                .selector('node.nodo-dispositivo')
+                .css({
+                    'width': 50,
+                    'height': 50,
+                    'background-color': '#3aa8a0',
+                    'font-size': 10,
+                    'border-width': 3,
+                    'border-color': '#3aa8a0'
+                })
+                .selector('node.nodo-dispositivo.activo')
+                .css({
+                    'border-color': '#3aa8a0'
+                })
+                .selector('node.nodo-dispositivo.inactivo')
+                .css({
+                    'border-color': '#888888'
+                })
+                .selector('edge')
+                .css({
+                    'target-arrow-shape': 'none',
+                    'line-color': '#ccc',
+                    'width': 1
+                })
+                .selector('edge.arista-activa')
+                .css({
+                    'line-color': '#3aa8a0',
+                    'width': 2
+                })
+                .selector('edge.arista-inactiva')
+                .css({
+                    'line-color': '#ccc',
+                    'width': 1,
+                    'line-style': 'dashed'
+                });
+
+            cytoInstance = cytoscape({
+                container: document.getElementById('cy'),
+                elements: elementos,
+                style: estilos,
+                layout: {
+                    name: 'concentric',
+                    concentric: function(n) {
+                        if (n.id() === 'centro') return 100;
+                        return 50;
+                    },
+                    levelWidth: function() { return 200; },
+                    radius: function() { return 300; }
+                },
+                wheelSensitivity: 0.1
+            });
+
+            cytoInstance.on('tap', 'node', onNodeClick);
         }
 
         /* ============================================================
@@ -1430,7 +1493,6 @@
            ============================================================ */
         document.getElementById('btnToggleVista').addEventListener('click', function() {
             modoAgrupado = !modoAgrupado;
-            grafoExpandidos = {}; // Reset expansiones al cambiar vista
             this.innerHTML = '<span class="material-symbols-outlined">' +
                 (modoAgrupado ? 'share_nodes' : 'view_list') + '</span> ' +
                 (modoAgrupado ? 'GRAFO' : 'LISTA');
