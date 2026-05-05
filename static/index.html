@@ -1343,22 +1343,22 @@
                 .selector('edge')
                 .css({
                     'target-arrow-shape': 'none',
-                    'line-color': 'rgba(200,200,200,0.4)',
-                    'width': 2,
-                    'opacity': 0.8
+                    'line-color': 'transparent',
+                    'width': 1,
+                    'opacity': 0
                 })
                 .selector('edge.arista-activa')
                 .css({
                     'line-color': '#00e5c4',
-                    'width': 3,
-                    'opacity': 1
+                    'width': 4,
+                    'opacity': 1,
+                    'line-cap': 'round'
                 })
                 .selector('edge.arista-inactiva')
                 .css({
-                    'line-color': '#999999',
-                    'width': 2,
-                    'line-style': 'dashed',
-                    'opacity': 0.6
+                    'line-color': 'transparent',
+                    'width': 0,
+                    'opacity': 0
                 });
 
             cytoInstance = cytoscape({
