@@ -1174,12 +1174,13 @@
             var tipos = Object.keys(grupos).sort();
             var elementos = [];
 
-            // Nodo central: Router (tipo con más dispositivos activos)
-            var tipoRouter = tipos.reduce(function(max, tipo) {
-                var activos = grupos[tipo].filter(function(d) { return estaActivo(d.ultima_vez); }).length;
-                var maxActivos = grupos[max].filter(function(d) { return estaActivo(d.ultima_vez); }).length;
-                return activos > maxActivos ? tipo : max;
-            }, tipos[0]);
+            // Nodo central: buscar "router" primero, si no, el con más dispositivos
+            var tipoRouter = tipos.find(function(t) { return t.toLowerCase() === 'router'; });
+            if (!tipoRouter) {
+                tipoRouter = tipos.reduce(function(max, tipo) {
+                    return grupos[tipo].length > grupos[max].length ? tipo : max;
+                }, tipos[0]);
+            }
 
             elementos.push({
                 data: { id: 'centro', label: tipoRouter, tipo: tipoRouter, activos: grupos[tipoRouter].filter(function(d) { return estaActivo(d.ultima_vez); }).length, total: grupos[tipoRouter].length },
@@ -1206,7 +1207,8 @@
             });
 
             inicializarCytoscape(elementos, function(evt) {
-                if (evt.target.isNode() && evt.target.id() !== 'centro') {
+                var nodeId = evt.target.id();
+                if (evt.target.isNode() && nodeId !== 'centro') {
                     var tipo = evt.target.data('tipo');
                     mostrarGrafoTipo(tipo, dispositivosGlobal);
                 }
@@ -1240,17 +1242,21 @@
                 });
             });
 
-            inicializarCytoscape(elementos, function(evt) {
+            var onDeviceClick = function(evt) {
                 if (evt.target.isNode() && evt.target.id() !== 'centro') {
                     var dispId = evt.target.data('dispositivo_id');
                     abrirModal(dispId);
                 }
-            });
+            };
 
-            // Botón "atrás"
-            document.getElementById('grafoContenedor').innerHTML +=
-                '<button style="position:absolute;top:10px;left:10px;padding:0.5rem 1rem;background:var(--ck-bg3);border:1px solid var(--ck-line);color:var(--ck-on-surface);cursor:pointer;font-weight:700" ' +
-                'onclick="mostrarGrafoTipos(dispositivosGlobal)">← ATRÁS</button>';
+            inicializarCytoscape(elementos, onDeviceClick);
+
+            // Botón "atrás" con z-index para que esté encima
+            var btnAtras = document.createElement('button');
+            btnAtras.innerHTML = '← ATRÁS';
+            btnAtras.style.cssText = 'position:absolute;top:15px;left:15px;padding:0.6rem 1.2rem;background:var(--ck-accent);border:none;color:#fff;cursor:pointer;font-weight:700;border-radius:4px;z-index:10;font-size:0.85rem';
+            btnAtras.onclick = function() { mostrarGrafoTipos(dispositivosGlobal); };
+            document.getElementById('grafoContenedor').appendChild(btnAtras);
         }
 
         function inicializarCytoscape(elementos, onNodeClick) {
@@ -1266,7 +1272,8 @@
                     'font-weight': 700,
                     'text-opacity': 1,
                     'text-wrap': 'wrap',
-                    'text-max-width': '80px'
+                    'text-max-width': '80px',
+                    'text-background-opacity': 0
                 })
                 .selector('node.nodo-tipo')
                 .css({
@@ -1278,9 +1285,7 @@
                     'border-color': '#00e5c4',
                     'font-size': 13,
                     'color': '#1a1a1a',
-                    'text-background-color': 'rgba(255,255,255,0.95)',
-                    'text-background-opacity': 1,
-                    'text-background-padding': '6px',
+                    'text-background-opacity': 0,
                     'box-shadow': '0 4px 12px rgba(0,229,196,0.3)'
                 })
                 .selector('node.nodo-centro')
@@ -1292,7 +1297,7 @@
                     'border-width': 4,
                     'font-size': 15,
                     'color': '#fff',
-                    'text-background-color': 'transparent',
+                    'text-background-opacity': 0,
                     'box-shadow': '0 6px 20px rgba(232,84,84,0.4)'
                 })
                 .selector('node.nodo-activo')
@@ -1319,9 +1324,7 @@
                     'border-color': '#00e5c4',
                     'font-size': 11,
                     'color': '#1a1a1a',
-                    'text-background-color': 'rgba(255,255,255,0.95)',
-                    'text-background-opacity': 1,
-                    'text-background-padding': '4px',
+                    'text-background-opacity': 0,
                     'box-shadow': '0 3px 10px rgba(0,229,196,0.25)'
                 })
                 .selector('node.nodo-dispositivo.activo')
