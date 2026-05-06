@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ReDo — Red Doméstica</title>
     <link rel="stylesheet" href="/static/hogar.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
         /* ── Reset base ── */
         html { font-size: 150%; }
@@ -1143,263 +1142,258 @@
         }
 
         /* ============================================================
-           Grafo Cytoscape: tipos → dispositivos
+           Grafo SVG interactivo: nivel 1 → tipos, nivel 2 → dispositivos
            ============================================================ */
-        var cytoInstance = null;
-        var grafoNivelActual = 'tipos'; // 'tipos' o 'dispositivos'
         var dispositivosGlobal = [];
 
         function estaActivo(ultimaVez) {
             if (!ultimaVez) return false;
-            var ahora = new Date();
-            var ultima = new Date(ultimaVez);
-            var minutos = (ahora - ultima) / 1000 / 60;
-            return minutos < 5;
+            try { return (Date.now() - new Date(ultimaVez.replace(' ', 'T')).getTime()) / 60000 < 70; }
+            catch(e) { return false; }
+        }
+
+        function _hashStr(s) {
+            var h = 0;
+            for (var k = 0; k < s.length; k++) { h = ((h << 5) - h) + s.charCodeAt(k); h |= 0; }
+            return Math.abs(h);
+        }
+
+        function _coloresSvg() {
+            var dark = document.documentElement.getAttribute('data-tema-cockpit') !== 'light';
+            return {
+                dark:    dark,
+                accent:  dark ? '#00e5c4' : '#1a6a60',
+                adim:    dark ? '#009e88' : '#0e4d45',
+                warn:    dark ? '#e8a03a' : '#b45309',
+                onV:     dark ? '#3a6058' : '#5a8078',
+                lineCol: dark ? 'rgba(0,229,196,0.22)' : 'rgba(26,106,96,0.18)'
+            };
+        }
+
+        function _svgDefs(c) {
+            return '<defs><radialGradient id="rg-redo" cx="50%" cy="50%" r="50%">' +
+                '<stop offset="0%" stop-color="' + c.accent + '" stop-opacity="0.28"/>' +
+                '<stop offset="100%" stop-color="' + c.accent + '" stop-opacity="0"/>' +
+                '</radialGradient></defs>';
+        }
+
+        function _svgNodoCentral(cx, cy, W, H, c, label) {
+            var rR = Math.round(Math.min(W, H) * 0.042);
+            var gf = c.dark ? 'filter:drop-shadow(0 0 10px ' + c.accent + ')' : '';
+            return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (rR * 2.5) + '" fill="url(#rg-redo)"/>' +
+                '<circle cx="' + cx + '" cy="' + cy + '" r="' + rR + '" fill="' + c.accent + '" opacity="0.9" style="' + gf + '"/>' +
+                '<text x="' + cx + '" y="' + (cy + rR + 16) + '" text-anchor="middle"' +
+                ' fill="' + c.onV + '" font-family="\'JetBrains Mono\',monospace" font-size="11" font-weight="700">' + label + '</text>';
         }
 
         function renderizarGrafo(dispositivos) {
             dispositivosGlobal = dispositivos;
-            grafoNivelActual = 'tipos';
             mostrarGrafoTipos(dispositivos);
         }
 
         function mostrarGrafoTipos(dispositivos) {
-            var grupos = dispositivos.reduce(function(acc, d) {
-                var tipo = d.tipo || 'otro';
-                if (!acc[tipo]) acc[tipo] = [];
-                acc[tipo].push(d);
-                return acc;
-            }, {});
-
-            var tipos = Object.keys(grupos).sort();
-            var elementos = [];
-
-            // Nodo central: buscar "router" primero, si no, el con más dispositivos
-            var tipoRouter = tipos.find(function(t) { return t.toLowerCase() === 'router'; });
-            if (!tipoRouter) {
-                tipoRouter = tipos.reduce(function(max, tipo) {
-                    return grupos[tipo].length > grupos[max].length ? tipo : max;
-                }, tipos[0]);
-            }
-
-            elementos.push({
-                data: { id: 'centro', label: tipoRouter, tipo: tipoRouter, activos: grupos[tipoRouter].filter(function(d) { return estaActivo(d.ultima_vez); }).length, total: grupos[tipoRouter].length },
-                classes: 'nodo-tipo nodo-centro'
-            });
-
-            // Nodos de tipos (alrededor del router)
-            tipos.forEach(function(tipo) {
-                if (tipo !== tipoRouter) {
-                    var activos = grupos[tipo].filter(function(d) { return estaActivo(d.ultima_vez); }).length;
-                    var total = grupos[tipo].length;
-                    var porcentaje = total > 0 ? activos / total : 0;
-                    var clase = porcentaje > 0.7 ? 'nodo-activo' : (porcentaje > 0.3 ? 'nodo-parcial' : 'nodo-inactivo');
-
-                    elementos.push({
-                        data: { id: 'tipo-' + tipo, label: tipo, tipo: tipo, activos: activos, total: total },
-                        classes: 'nodo-tipo ' + clase
-                    });
-
-                    elementos.push({
-                        data: { source: 'centro', target: 'tipo-' + tipo }
-                    });
-                }
-            });
-
-            inicializarCytoscape(elementos, function(evt) {
-                var nodeId = evt.target.id();
-                if (evt.target.isNode() && nodeId !== 'centro') {
-                    var tipo = evt.target.data('tipo');
-                    mostrarGrafoTipo(tipo, dispositivosGlobal);
-                }
-            });
-        }
-
-        function mostrarGrafoTipo(tipo, dispositivos) {
-            grafoNivelActual = 'dispositivos';
-            var disp = dispositivos.filter(function(d) { return d.tipo === tipo; });
-            var elementos = [];
-
-            // Nodo central del tipo
-            elementos.push({
-                data: { id: 'centro', label: tipo, tipo: tipo },
-                classes: 'nodo-tipo nodo-centro'
-            });
-
-            // Nodos de dispositivos
-            disp.forEach(function(d) {
-                var activo = estaActivo(d.ultima_vez);
-                var clase = activo ? 'nodo-dispositivo activo' : 'nodo-dispositivo inactivo';
-
-                elementos.push({
-                    data: { id: 'disp-' + d.id, label: d.notas || d.mac, dispositivo_id: d.id, activo: activo },
-                    classes: clase
-                });
-
-                elementos.push({
-                    data: { source: 'centro', target: 'disp-' + d.id, activo: activo },
-                    classes: activo ? 'arista-activa' : 'arista-inactiva'
-                });
-            });
-
-            var onDeviceClick = function(evt) {
-                if (evt.target.isNode() && evt.target.id() !== 'centro') {
-                    var dispId = evt.target.data('dispositivo_id');
-                    abrirModal(dispId);
-                }
-            };
-
-            inicializarCytoscape(elementos, onDeviceClick);
-
-            // Botón "atrás" con z-index para que esté encima
-            var btnAtras = document.createElement('button');
-            btnAtras.innerHTML = '← ATRÁS';
-            btnAtras.style.cssText = 'position:absolute;top:15px;left:15px;padding:0.6rem 1.2rem;background:var(--ck-accent);border:none;color:#fff;cursor:pointer;font-weight:700;border-radius:4px;z-index:10;font-size:0.85rem';
-            btnAtras.onclick = function() { mostrarGrafoTipos(dispositivosGlobal); };
-            document.getElementById('grafoContenedor').appendChild(btnAtras);
-        }
-
-        function inicializarCytoscape(elementos, onNodeClick) {
             var contenedor = document.getElementById('grafoContenedor');
-            contenedor.innerHTML = '<div id="cy" style="width:100%;height:600px;background:var(--ck-bg2);border:1px solid var(--ck-line)"></div>';
+            contenedor.innerHTML = '<svg id="redo-grafo-svg" style="width:100%;height:600px;display:block"></svg>';
 
-            var estilos = cytoscape.stylesheet()
-                .selector('node')
-                .css({
-                    'text-valign': 'center',
-                    'text-halign': 'center',
-                    'font-family': 'var(--ck-fuente)',
-                    'font-weight': 700,
-                    'text-opacity': 1,
-                    'text-wrap': 'wrap',
-                    'text-max-width': '80px',
-                    'text-background-opacity': 0
-                })
-                .selector('node.nodo-tipo')
-                .css({
-                    'content': 'data(label)',
-                    'width': 'mapData(total, 1, 20, 60, 140)',
-                    'height': 'mapData(total, 1, 20, 60, 140)',
-                    'background-color': '#1a9b8e',
-                    'border-width': 3,
-                    'border-color': '#00e5c4',
-                    'font-size': 13,
-                    'color': '#ffffff',
-                    'text-background-opacity': 0,
-                    'box-shadow': '0 4px 12px rgba(0,229,196,0.3)'
-                })
-                .selector('node.nodo-centro')
-                .css({
-                    'width': 160,
-                    'height': 160,
-                    'background-color': '#c1392b',
-                    'border-color': '#ff6b6b',
-                    'border-width': 4,
-                    'font-size': 15,
-                    'color': '#fff',
-                    'text-background-opacity': 0,
-                    'box-shadow': '0 6px 20px rgba(232,84,84,0.4)'
-                })
-                .selector('node.nodo-activo')
-                .css({
-                    'background-color': '#3aa8a0',
-                    'border-color': '#00e5c4'
-                })
-                .selector('node.nodo-parcial')
-                .css({
-                    'background-color': '#ffa500',
-                    'border-color': '#ffb81c'
-                })
-                .selector('node.nodo-inactivo')
-                .css({
-                    'background-color': '#888888',
-                    'border-color': '#aaaaaa'
-                })
-                .selector('node.nodo-dispositivo')
-                .css({
-                    'content': 'data(label)',
-                    'width': 70,
-                    'height': 70,
-                    'background-color': '#1a9b8e',
-                    'border-width': 4,
-                    'border-color': '#00e5c4',
-                    'font-size': 10,
-                    'color': '#ffffff',
-                    'text-background-opacity': 0,
-                    'box-shadow': '0 3px 10px rgba(0,229,196,0.25)'
-                })
-                .selector('node.nodo-dispositivo.activo')
-                .css({
-                    'border-color': '#00e5c4',
-                    'background-color': '#1a9b8e',
-                    'color': '#ffffff'
-                })
-                .selector('node.nodo-dispositivo.inactivo')
-                .css({
-                    'border-color': '#999999',
-                    'background-color': '#555555',
-                    'color': '#ffffff'
-                })
-                .selector('edge')
-                .css({
-                    'target-arrow-shape': 'none',
-                    'line-color': 'transparent',
-                    'width': 1,
-                    'opacity': 0
-                })
-                .selector('edge.arista-activa')
-                .css({
-                    'line-color': '#00e5c4',
-                    'width': 4,
-                    'opacity': 1,
-                    'line-cap': 'round'
-                })
-                .selector('edge.arista-inactiva')
-                .css({
-                    'line-color': 'transparent',
-                    'width': 0,
-                    'opacity': 0
+            requestAnimationFrame(function() {
+                var svgEl = document.getElementById('redo-grafo-svg');
+                if (!svgEl) return;
+
+                var W = svgEl.clientWidth || 800;
+                var H = svgEl.clientHeight || 600;
+                var cx = W / 2, cy = H / 2;
+                var c = _coloresSvg();
+
+                // Agrupar por tipo y detectar desconocidos
+                var grupos = {};
+                var desconocidos = [];
+                dispositivos.forEach(function(d) {
+                    var t = d.tipo || 'otro';
+                    if (!grupos[t]) grupos[t] = [];
+                    grupos[t].push(d);
+                    if (!d.confiable || d.confiable === 0) desconocidos.push(d);
                 });
 
-            cytoInstance = cytoscape({
-                container: document.getElementById('cy'),
-                elements: elementos,
-                style: estilos,
-                layout: {
-                    name: 'cose',
-                    directed: false,
-                    animate: true,
-                    animationDuration: 500,
-                    avoidOverlap: true,
-                    nodeSpacing: 50,
-                    gravity: 1,
-                    cooling: 0.99,
-                    cooling_threshold: 0.001,
-                    padding: 40
-                },
-                wheelSensitivity: 0.1,
-                boxSelectionEnabled: false,
-                autounselectify: true
-            });
-
-            // Manejar click en nodos
-            cytoInstance.on('tap', 'node', function(evt) {
-                var node = evt.target;
-                if (node.id() !== 'centro') {
-                    onNodeClick(evt);
+                var tipos = Object.keys(grupos).sort();
+                var nodos = tipos.map(function(tipo) {
+                    var lista = grupos[tipo];
+                    var activos = lista.filter(function(d) { return estaActivo(d.ultima_vez); }).length;
+                    var total = lista.length;
+                    var pct = total > 0 ? activos / total : 0;
+                    return { tipo: tipo, label: tipo, activos: activos, total: total, pct: pct, desconocido: false };
+                });
+                if (desconocidos.length > 0) {
+                    var aD = desconocidos.filter(function(d) { return estaActivo(d.ultima_vez); }).length;
+                    nodos.push({ tipo: '__desc__', label: 'Desconocidos', activos: aD, total: desconocidos.length, pct: aD / desconocidos.length, desconocido: true });
                 }
-            });
 
-            // Hover para mejorar UX
-            cytoInstance.on('mouseover', 'node', function(evt) {
-                evt.target.style('border-width', 5);
-                evt.target.style('box-shadow', '0 6px 20px rgba(0,229,196,0.5)');
+                var maxTotal = nodos.reduce(function(m, t) { return Math.max(m, t.total); }, 1);
+                var n = nodos.length;
+                var rx = cx * 0.70, ry = cy * 0.65;
+
+                nodos.forEach(function(t, i) {
+                    var ang = (i / Math.max(n, 1)) * 2 * Math.PI - Math.PI / 2;
+                    t.x = cx + rx * Math.cos(ang);
+                    t.y = cy + ry * Math.sin(ang);
+                    t.r = 18 + (t.total / maxTotal) * 34; // 18..52 px
+                });
+
+                svgEl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+                var out = _svgDefs(c);
+
+                // Líneas centro → tipos
+                nodos.forEach(function(t) {
+                    var lc = t.desconocido ? c.warn : c.lineCol;
+                    out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + t.x + '" y2="' + t.y + '"' +
+                        ' stroke="' + lc + '" stroke-width="' + (t.desconocido ? 1.5 : 1) + '"' +
+                        (t.desconocido ? ' stroke-dasharray="6 4"' : '') + '/>';
+                });
+
+                // Nodo router central
+                out += _svgNodoCentral(cx, cy, W, H, c, 'Router');
+
+                // Nodos de tipo (con data-tipo para el click)
+                nodos.forEach(function(t) {
+                    var col = t.desconocido ? c.warn : (t.pct > 0.7 ? c.accent : (t.pct > 0.3 ? '#e8a03a' : c.adim));
+                    var gf  = c.dark ? 'drop-shadow(0 0 7px ' + col + ')' : 'none';
+                    var lbl = t.label.substring(0, 12);
+                    var safeId = t.tipo.replace(/[&"<>]/g, '_');
+
+                    out += '<g class="grafo-tipo" data-tipo="' + safeId + '" style="cursor:pointer">';
+                    out += '<circle cx="' + t.x + '" cy="' + t.y + '" r="' + (t.r * 1.6) + '" fill="' + col + '" opacity="0.05"/>';
+                    out += '<circle cx="' + t.x + '" cy="' + t.y + '" r="' + t.r + '" fill="' + col + '" opacity="0.18"' +
+                        ' stroke="' + col + '" stroke-width="1.5" style="filter:' + gf + '"/>';
+                    out += '<text x="' + t.x + '" y="' + (t.y + 4) + '" text-anchor="middle" fill="' + col + '"' +
+                        ' font-family="\'JetBrains Mono\',monospace" font-size="11" font-weight="700" pointer-events="none">' + lbl + '</text>';
+                    out += '<text x="' + t.x + '" y="' + (t.y + t.r + 16) + '" text-anchor="middle" fill="' + c.onV + '"' +
+                        ' font-family="\'JetBrains Mono\',monospace" font-size="9" pointer-events="none">' +
+                        t.activos + '/' + t.total + '</text>';
+                    out += '</g>';
+                });
+
+                svgEl.innerHTML = out;
+
+                // Mapeo safeId → tipo real (para recuperar el valor original en el click)
+                var mapaId = {};
+                nodos.forEach(function(t) {
+                    mapaId[t.tipo.replace(/[&"<>]/g, '_')] = t.tipo;
+                });
+
+                svgEl.querySelectorAll('.grafo-tipo').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        var safeId = this.getAttribute('data-tipo');
+                        var tipo   = mapaId[safeId] || safeId;
+                        var lista;
+                        if (tipo === '__desc__') {
+                            lista = dispositivosGlobal.filter(function(d) { return !d.confiable || d.confiable === 0; });
+                            mostrarGrafoDispositivos('Desconocidos', lista);
+                        } else {
+                            lista = dispositivosGlobal.filter(function(d) { return (d.tipo || 'otro') === tipo; });
+                            mostrarGrafoDispositivos(tipo, lista);
+                        }
+                    });
+                });
             });
-            cytoInstance.on('mouseout', 'node', function(evt) {
-                evt.target.style('border-width', evt.target.hasClass('nodo-centro') ? 4 : 3);
-                evt.target.style('box-shadow', evt.target.hasClass('nodo-centro')
-                    ? '0 6px 20px rgba(232,84,84,0.4)'
-                    : '0 3px 10px rgba(0,229,196,0.25)');
+        }
+
+        function mostrarGrafoDispositivos(titulo, dispositivos) {
+            var contenedor = document.getElementById('grafoContenedor');
+            contenedor.innerHTML = '<svg id="redo-grafo-svg" style="width:100%;height:600px;display:block"></svg>';
+
+            requestAnimationFrame(function() {
+                var svgEl = document.getElementById('redo-grafo-svg');
+                if (!svgEl) return;
+
+                var W = svgEl.clientWidth || 800;
+                var H = svgEl.clientHeight || 600;
+                var cx = W / 2, cy = H / 2;
+                var c = _coloresSvg();
+                var n = dispositivos.length;
+                var rx = cx * 0.70, ry = cy * 0.65;
+
+                var nodos = dispositivos.map(function(d, i) {
+                    var ang    = (i / Math.max(n, 1)) * 2 * Math.PI - Math.PI / 2;
+                    var activo = estaActivo(d.ultima_vez);
+                    var unknown = !d.confiable || d.confiable === 0;
+                    var nombre = (d.notas || d.hostname || '').trim() || null;
+                    var label  = (nombre || d.ip || d.mac || '?').substring(0, 12);
+                    var sublabel = nombre && d.ip ? d.ip.split('.').slice(2).join('.') : '';
+
+                    // Posición determinista (hash del IP) para que no salte entre renders
+                    var hR  = _hashStr((d.ip || d.mac || String(i)) + 'r');
+                    var t   = (hR % 997) / 996;
+                    var rxi = rx * (0.45 + t * 0.55);
+                    var ryi = ry * (0.45 + t * 0.55);
+
+                    return {
+                        x: cx + rxi * Math.cos(ang),
+                        y: cy + ryi * Math.sin(ang),
+                        activo: activo, unknown: unknown,
+                        label: label, sublabel: sublabel, id: d.id
+                    };
+                });
+
+                svgEl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+                var out = _svgDefs(c);
+
+                // Aristas: solo dispositivos activos
+                nodos.forEach(function(nd) {
+                    if (!nd.activo) return;
+                    var lc = nd.unknown ? c.warn : c.lineCol;
+                    out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + nd.x + '" y2="' + nd.y + '"' +
+                        ' stroke="' + lc + '" stroke-width="' + (nd.unknown ? 1.5 : 1) + '"' +
+                        (nd.unknown ? ' stroke-dasharray="5 4"' : '') + '/>';
+                });
+
+                // Nodo central del tipo
+                out += _svgNodoCentral(cx, cy, W, H, c, titulo.substring(0, 10));
+
+                // Nodos dispositivo
+                nodos.forEach(function(nd) {
+                    var col    = nd.unknown ? c.warn : (nd.activo ? c.accent : c.adim);
+                    var txtCol = nd.unknown ? c.warn : (nd.activo ? c.accent : c.onV);
+                    var r      = nd.activo ? 7 : 5;
+                    var opac   = nd.activo ? 1 : 0.45;
+                    var gf     = c.dark ? 'drop-shadow(0 0 ' + (nd.activo ? '5' : '2') + 'px ' + col + ')' : 'none';
+
+                    out += '<g class="grafo-disp" data-id="' + nd.id + '" style="cursor:pointer">';
+                    out += '<circle cx="' + nd.x + '" cy="' + nd.y + '" r="' + (r * 2.5) + '" fill="' + col + '" opacity="' + (opac * 0.08) + '"/>';
+                    out += '<circle cx="' + nd.x + '" cy="' + nd.y + '" r="' + r + '" fill="' + col + '"' +
+                        ' opacity="' + opac + '" style="filter:' + gf + '"/>';
+                    var ty = nd.y + r + 13;
+                    out += '<text x="' + nd.x + '" y="' + ty + '" text-anchor="middle" fill="' + txtCol + '"' +
+                        ' font-family="\'JetBrains Mono\',monospace" font-size="10" font-weight="500"' +
+                        ' opacity="' + (nd.activo ? 1 : 0.6) + '" pointer-events="none">' + nd.label + '</text>';
+                    if (nd.sublabel) {
+                        out += '<text x="' + nd.x + '" y="' + (ty + 11) + '" text-anchor="middle" fill="' + c.onV + '"' +
+                            ' font-family="\'JetBrains Mono\',monospace" font-size="8"' +
+                            ' opacity="' + (nd.activo ? 0.6 : 0.3) + '" pointer-events="none">' + nd.sublabel + '</text>';
+                    }
+                    out += '</g>';
+                });
+
+                // Botón volver
+                var bc = c.accent;
+                out += '<g class="grafo-atras" style="cursor:pointer">' +
+                    '<rect x="12" y="12" width="82" height="26" rx="4" fill="' + bc + '" opacity="0.15" stroke="' + bc + '" stroke-width="1"/>' +
+                    '<text x="53" y="30" text-anchor="middle" fill="' + bc + '"' +
+                    ' font-family="\'JetBrains Mono\',monospace" font-size="11" font-weight="700" pointer-events="none">← TIPOS</text>' +
+                    '</g>';
+
+                svgEl.innerHTML = out;
+
+                // Event listeners tras actualizar el DOM
+                svgEl.querySelectorAll('.grafo-disp').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        abrirModal(parseInt(this.getAttribute('data-id'), 10));
+                    });
+                });
+                var btnAtras = svgEl.querySelector('.grafo-atras');
+                if (btnAtras) {
+                    btnAtras.addEventListener('click', function() {
+                        mostrarGrafoTipos(dispositivosGlobal);
+                    });
+                }
             });
         }
 
