@@ -1170,6 +1170,7 @@
                 accent:  dark ? '#00e5c4' : '#1a6a60',
                 adim:    dark ? '#009e88' : '#0e4d45',
                 warn:    dark ? '#e8a03a' : '#b45309',
+                parcial: dark ? '#4a9eca' : '#2a6a9a',
                 onV:     dark ? '#3a6058' : '#5a8078',
                 lineCol: dark ? 'rgba(0,229,196,0.22)' : 'rgba(26,106,96,0.18)'
             };
@@ -1209,14 +1210,17 @@
                 var cx = W / 2, cy = H / 2;
                 var c = _coloresSvg();
 
-                // Agrupar por tipo y detectar desconocidos
+                // Agrupar por tipo (solo confiables) y detectar desconocidos
                 var grupos = {};
                 var desconocidos = [];
                 dispositivos.forEach(function(d) {
-                    var t = d.tipo || 'otro';
-                    if (!grupos[t]) grupos[t] = [];
-                    grupos[t].push(d);
-                    if (!d.confiable || d.confiable === 0) desconocidos.push(d);
+                    if (!d.confiable || d.confiable === 0) {
+                        desconocidos.push(d);
+                    } else {
+                        var t = d.tipo || 'otro';
+                        if (!grupos[t]) grupos[t] = [];
+                        grupos[t].push(d);
+                    }
                 });
 
                 var tipos = Object.keys(grupos).sort();
@@ -1259,7 +1263,7 @@
 
                 // Nodos de tipo (con data-tipo para el click)
                 nodos.forEach(function(t) {
-                    var col = t.desconocido ? c.warn : (t.pct > 0.7 ? c.accent : (t.pct > 0.3 ? '#e8a03a' : c.adim));
+                    var col = t.desconocido ? c.warn : (t.pct > 0.7 ? c.accent : (t.pct > 0.3 ? c.parcial : c.adim));
                     var gf  = c.dark ? 'drop-shadow(0 0 7px ' + col + ')' : 'none';
                     var lbl = t.label.substring(0, 12);
                     var safeId = t.tipo.replace(/[&"<>]/g, '_');
@@ -1293,7 +1297,7 @@
                             lista = dispositivosGlobal.filter(function(d) { return !d.confiable || d.confiable === 0; });
                             mostrarGrafoDispositivos('Desconocidos', lista);
                         } else {
-                            lista = dispositivosGlobal.filter(function(d) { return (d.tipo || 'otro') === tipo; });
+                            lista = dispositivosGlobal.filter(function(d) { return (d.tipo || 'otro') === tipo && d.confiable && d.confiable !== 0; });
                             mostrarGrafoDispositivos(tipo, lista);
                         }
                     });
