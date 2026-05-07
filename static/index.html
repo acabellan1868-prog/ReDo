@@ -1037,6 +1037,8 @@
         /* ============================================================
            Zonas y tipos
            ============================================================ */
+        var ZONAS_PRESET = ['Salón', 'Cocina', 'Hab. Ppal.', 'Baño', 'Despacho', 'Pasillo', 'Garaje', 'Exterior', 'Terraza'];
+
         function cargarZonas() {
             fetch(BASE + '/api/dispositivos/zonas')
                 .then(function(r) { return r.json(); })
@@ -1048,9 +1050,11 @@
                         sel.innerHTML += '<option value="' + z + '">' + z + '</option>';
                     });
                     sel.value = val;
+                    // Datalist: unión de presets y zonas ya guardadas en BD
+                    var todas = Array.from(new Set(ZONAS_PRESET.concat(zonas)));
                     var dl = document.getElementById('listaZonas');
                     dl.innerHTML = '';
-                    zonas.forEach(function(z) { dl.innerHTML += '<option value="' + z + '">'; });
+                    todas.forEach(function(z) { dl.innerHTML += '<option value="' + z + '">'; });
                 });
         }
 
