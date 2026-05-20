@@ -3,6 +3,9 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 
+# Exports de dispositivos (datos sensibles de red)
+dispositivos_*.json
+
 # Byte-compiled / optimized
 __pycache__/
 *.py[cod]
